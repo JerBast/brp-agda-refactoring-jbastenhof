@@ -1,3 +1,3 @@
-# Research Project (Bachelor): Correct-by-construction refactoring of functional code
+# Correct-by-construction refactoring of functional code
 
 > **Note**: TODO
