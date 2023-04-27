@@ -1,0 +1,5 @@
+name: brp-agda-refactoring-jbastenhof
+depend:
+include:
+    ./src/
+    /usr/share/agda-stdlib/
