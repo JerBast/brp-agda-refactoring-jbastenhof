@@ -6,34 +6,13 @@ open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
 open import HLL.HLL
 open import HLL.Types
-open import HLL.Context hiding (lookup)
+open import HLL.Values
+open import HLL.Context
 
 private
     variable
         Γ : Ctx
         t u : Type
-
-Env : Ctx → Set
-
-data Value : Set where
-    num   : ℕ → Value
-    char  : Char → Value
-    clos  : (t ∷ Γ) ⊢ u → Env Γ → Value
-    tuple : List Value → Value
-
-Env Γ = {t : Type} → t ∈ Γ → Value
-
-‵[] : Env []
-‵[] ()
-
-infixr 5 _‵∷_
-
-_‵∷_ : ∀ {Γ t} → Value → Env Γ → Env (t ∷ Γ)
-(v ‵∷ γ) here      = v
-(v ‵∷ γ) (there x) = γ x
-
-private
-    variable
         γ γ' : Env Γ
 
 infix 3 _⊢_↓_
