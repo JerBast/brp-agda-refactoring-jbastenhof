@@ -27,4 +27,4 @@ ex2 : ‵[] ⊢ (fun (# 0)) ∙ (num 42) ↓ num 42
 ex2 = ↓app ↓fun (↓var here) ↓num
 
 ex3 : ‵[] ⊢ (char 'Z', num 10 , ⟨⟩) ↓ tuple (char 'Z' ∷ num 10 ∷ [])
-ex3 = ↓ ↓char , (↓ ↓num , ↓⟨⟩)
+ex3 = ↓char ↓, ↓num ↓, ↓⟨⟩

@@ -18,7 +18,8 @@ private
         ts    : List Type
         vs    : List Value
 
-infix 3 _⊢_↓_
+infix  3 _⊢_↓_
+infixr 5 _↓,_
 
 data _⊢_↓_ : Env Γ → (Γ ⊢ t) → Value → Set where
     ↓num  : ∀ {n}           → γ ⊢ num n ↓ num n
@@ -34,7 +35,7 @@ data _⊢_↓_ : Env Γ → (Γ ⊢ t) → Value → Set where
 
     -- Tuple
     ↓⟨⟩  : γ ⊢ ⟨⟩ ↓ tuple []
-    ↓_,_ : {e₁ : Γ ⊢ t} {e₂ : Γ ⊢ tupleT ts}
+    _↓,_ : {e₁ : Γ ⊢ t} {e₂ : Γ ⊢ tupleT ts}
         → γ ⊢ e₁ ↓ v
         → γ ⊢ e₂ ↓ tuple vs
         --------------------------------
