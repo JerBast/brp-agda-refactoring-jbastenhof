@@ -3,6 +3,7 @@
  -}
 module HLL.Examples.DynamicSemantics where
 
+open import Agda.Builtin.List
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
 open import Data.Nat.Properties using (_≤?_)
@@ -10,6 +11,7 @@ open import Relation.Nullary.Decidable using (True; toWitness)
 
 open import HLL.HLL
 open import HLL.Types
+open import HLL.Values
 open import HLL.Context
 open import HLL.DynamicSemantics
 
@@ -23,3 +25,6 @@ ex1 = ↓num
 
 ex2 : ‵[] ⊢ (fun (# 0)) ∙ (num 42) ↓ num 42
 ex2 = ↓app ↓fun (↓var here) ↓num
+
+ex3 : ‵[] ⊢ (char 'Z', num 10 , ⟨⟩) ↓ tuple (char 'Z' ∷ num 10 ∷ [])
+ex3 = ↓ ↓char , (↓ ↓num , ↓⟨⟩)

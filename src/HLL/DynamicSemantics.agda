@@ -11,9 +11,12 @@ open import HLL.Context
 
 private
     variable
-        Γ : Ctx
-        t u : Type
-        γ γ' : Env Γ
+        Γ     : Ctx
+        t u   : Type
+        γ γ'  : Env Γ
+        v     : Value
+        ts    : List Type
+        vs    : List Value
 
 infix 3 _⊢_↓_
 
@@ -29,4 +32,10 @@ data _⊢_↓_ : Env Γ → (Γ ⊢ t) → Value → Set where
         -----------------
         → γ ⊢ (f ∙ a) ↓ s
 
-    -- TODO: tuple
+    -- Tuple
+    ↓⟨⟩  : γ ⊢ ⟨⟩ ↓ tuple []
+    ↓_,_ : {e₁ : Γ ⊢ t} {e₂ : Γ ⊢ tupleT ts}
+        → γ ⊢ e₁ ↓ v
+        → γ ⊢ e₂ ↓ tuple vs
+        --------------------------------
+        → γ ⊢ (e₁ , e₂) ↓ tuple (v ∷ vs)
