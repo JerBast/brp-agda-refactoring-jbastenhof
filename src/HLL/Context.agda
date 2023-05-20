@@ -7,6 +7,7 @@ module HLL.Context where
 open import Agda.Builtin.List
 
 open import Data.Nat.Base
+open import Data.List.Base using (_++_)
 
 open import HLL.Types
 
@@ -18,6 +19,9 @@ private
 
 Ctx : Set
 Ctx = List Type
+
+_؛_ : List Type → Ctx → Ctx
+Δ ؛ Γ = Δ ++ Γ
 
 data _∈_ : A → List A → Set where
     here  : a ∈ (a ∷ as)
