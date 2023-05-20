@@ -15,7 +15,7 @@ open import HLL.DataContext
 private
     variable
         Γ : Ctx
-        Γ⁰ : DataCtx
+        Γᵈ : DataCtx
         
         t u : Type
         ts : List Type
@@ -24,33 +24,33 @@ infix  4 _,_⊢_
 infixr 5 _,_
 
 data _,_⊢_ : Ctx → DataCtx → Type → Set where
-    num  : ℕ              → Γ , Γ⁰ ⊢ numT
-    char : Char           → Γ , Γ⁰ ⊢ charT
-    var  : t ∈ Γ          → Γ , Γ⁰ ⊢ t
-    fun  : t ∷ Γ , Γ⁰ ⊢ u → Γ , Γ⁰ ⊢ t ⇒ u 
-    fix  : t ∷ Γ , Γ⁰ ⊢ t → Γ , Γ⁰ ⊢ t
-    _∙_  : Γ , Γ⁰ ⊢ t ⇒ u
-        → Γ , Γ⁰ ⊢ t
+    num  : ℕ              → Γ , Γᵈ ⊢ numT
+    char : Char           → Γ , Γᵈ ⊢ charT
+    var  : t ∈ Γ          → Γ , Γᵈ ⊢ t
+    fun  : t ∷ Γ , Γᵈ ⊢ u → Γ , Γᵈ ⊢ t ⇒ u 
+    fix  : t ∷ Γ , Γᵈ ⊢ t → Γ , Γᵈ ⊢ t
+    _∙_  : Γ , Γᵈ ⊢ t ⇒ u
+        → Γ , Γᵈ ⊢ t
         ------------
-        → Γ , Γ⁰ ⊢ u
+        → Γ , Γᵈ ⊢ u
 
     -- Tuple
-    ⟨⟩  : Γ , Γ⁰ ⊢ tupleT []
-    _,_ : Γ , Γ⁰ ⊢ t
-        → Γ , Γ⁰ ⊢ (tupleT ts)
+    ⟨⟩  : Γ , Γᵈ ⊢ tupleT []
+    _,_ : Γ , Γᵈ ⊢ t
+        → Γ , Γᵈ ⊢ (tupleT ts)
         --------------------------
-        → Γ , Γ⁰ ⊢ tupleT (t ∷ ts)
+        → Γ , Γᵈ ⊢ tupleT (t ∷ ts)
 
     -- Record
     recDecl : (ts : List Type)
         ---------------------
-        → Γ , ts ∷ Γ⁰ ⊢ unitT
-    recInst : ts ∈ Γ⁰
+        → Γ , ts ∷ Γᵈ ⊢ unitT
+    recInst : ts ∈ Γᵈ
         ------------------
-        → Γ , Γ⁰ ⊢ recT ts
+        → Γ , Γᵈ ⊢ recT ts
 
     -- Sequence
-    _⟶_ : Γ , Γ⁰ ⊢ t
-        → Γ , Γ⁰ ⊢ u
+    _⟶_ : Γ , Γᵈ ⊢ t
+        → Γ , Γᵈ ⊢ u
         ------------
-        → Γ , Γ⁰ ⊢ u
+        → Γ , Γᵈ ⊢ u
