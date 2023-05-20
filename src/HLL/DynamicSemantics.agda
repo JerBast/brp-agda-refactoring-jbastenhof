@@ -15,38 +15,42 @@ private
         Γ  : Ctx
         Γᵈ : DataCtx
 
-        γ γ'  : Env Γ
-        γᵈ    : DataEnv Γᵈ
+        γ γ' : Env Γ
 
-        t u   : Type
-        v     : Value
-        ts    : List Type
-        vs    : List Value
+        t u : Type
+        ts  : List Type
+
+        v  : Value
+        vs : List Value
 
 infix  3 _,_⊢_↓_
 infixr 5 _↓,_
 
-data _,_⊢_↓_ : Env Γ → DataEnv Γᵈ → (Γ , Γᵈ ⊢ t) → Value → Set where
-    ↓num  : ∀ {n}       → γ , γᵈ ⊢ num n ↓ num n
-    ↓char : ∀ {c}       → γ , γᵈ ⊢ char c ↓ char c
-    ↓var  : (x : t ∈ Γ) → γ , γᵈ ⊢ var x ↓ γ x
+data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value → Set where
+    ↓num  : ∀ {n}       → γ , Γᵈ ⊢ num n ↓ num n
+    ↓char : ∀ {c}       → γ , Γᵈ ⊢ char c ↓ char c
+    ↓var  : (x : t ∈ Γ) → γ , Γᵈ ⊢ var x ↓ γ x
     ↓fun  : {b : t ∷ Γ , Γᵈ ⊢ u}
         ---------------------------
-        → γ , γᵈ ⊢ fun b ↓ clos b γ
+        → γ , Γᵈ ⊢ fun b ↓ clos b γ
     ↓app  : ∀ {s v} {a : Γ , Γᵈ ⊢ t} {b : t ∷ Γ , Γᵈ ⊢ u} {f : Γ , Γᵈ ⊢ t ⇒ u}
-        → γ , γᵈ ⊢ f ↓ clos b γ'
-        → v ‵∷ γ' , γᵈ ⊢ b ↓ s
-        → γ , γᵈ ⊢ a ↓ v
+        → γ , Γᵈ ⊢ f ↓ clos b γ'
+        → v ‵∷ γ' , Γᵈ ⊢ b ↓ s
+        → γ , Γᵈ ⊢ a ↓ v
         ----------------------
-        → γ , γᵈ ⊢ (f ∙ a) ↓ s
+        → γ , Γᵈ ⊢ (f ∙ a) ↓ s
 
     -- Tuple
-    ↓⟨⟩  : γ , γᵈ ⊢ ⟨⟩ ↓ tuple []
+    ↓⟨⟩  : γ , Γᵈ ⊢ ⟨⟩ ↓ tuple []
     _↓,_ : {e₁ : Γ , Γᵈ ⊢ t} {e₂ : Γ , Γᵈ ⊢ tupleT ts}
-        → γ , γᵈ ⊢ e₁ ↓ v
-        → γ , γᵈ ⊢ e₂ ↓ tuple vs
+        → γ , Γᵈ ⊢ e₁ ↓ v
+        → γ , Γᵈ ⊢ e₂ ↓ tuple vs
         -------------------------------------
-        → γ , γᵈ ⊢ (e₁ , e₂) ↓ tuple (v ∷ vs)
+        → γ , Γᵈ ⊢ (e₁ , e₂) ↓ tuple (v ∷ vs)
     
     -- Record
-    ↓recDecl : γ , γᵈ ⊢ recDecl ts ↓ unit
+    -- ↓recDecl : γ , Γᵈ ⊢ recDecl ts ↓ unit
+    -- ↓recInst : (x : ts ∈ Γᵈ) -- TODO: In search for magic
+    --     → (rc : rec vs)
+    --     -------------------------
+    --     → γ , Γᵈ ⊢ recInst ts ↓ rec vs

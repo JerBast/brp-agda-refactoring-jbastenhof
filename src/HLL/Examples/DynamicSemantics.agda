@@ -21,11 +21,11 @@ open import HLL.DynamicSemantics
 #_ n {n∈Γ} = var (count (toWitness n∈Γ))
 
 -- Examples
-ex1 : ‵[] , ‵[]ᵈ ⊢ num 42 ↓ num 42
+ex1 : ‵[] , [] ⊢ num 42 ↓ num 42
 ex1 = ↓num
 
-ex2 : ‵[] , ‵[]ᵈ ⊢ (fun (# 0)) ∙ (num 42) ↓ num 42
+ex2 : ‵[] , [] ⊢ (fun (# 0)) ∙ (num 42) ↓ num 42
 ex2 = ↓app ↓fun (↓var here) ↓num
 
-ex3 : ‵[] , ‵[]ᵈ ⊢ (char 'Z', num 10 , ⟨⟩) ↓ tuple (char 'Z' ∷ num 10 ∷ [])
+ex3 : ‵[] , [] ⊢ (char 'Z', num 10 , ⟨⟩) ↓ tuple (char 'Z' ∷ num 10 ∷ [])
 ex3 = ↓char ↓, ↓num ↓, ↓⟨⟩
