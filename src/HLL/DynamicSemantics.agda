@@ -49,7 +49,7 @@ data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value
         → γ , Γᵈ ⊢ (e₁ , e₂) ↓ tuple (v ∷ vs)
     
     -- Record
-    -- ↓recDecl : γ , Γᵈ ⊢ recDecl ts ↓ unit
+    ↓recDecl : γ , ts ∷ Γᵈ ⊢ recDecl ts ↓ unit
     -- ↓recInst : (x : ts ∈ Γᵈ) -- TODO: In search for magic
     --     → (rc : rec vs)
     --     -------------------------
