@@ -21,9 +21,14 @@ private
         ts : List Type
 
 infix  4 _,_⊢_
-infixr 5 _,_
 
-data _,_⊢_ : Ctx → DataCtx → Type → Set where
+data _,_⊢_ : Ctx → DataCtx → Type → Set
+
+data TypeResolver (Γ : Ctx) (Γᵈ : DataCtx) : List Type → Set where
+    []ᵀ : TypeResolver Γ Γᵈ []
+    _∷_ : (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ (t ∷ ts) 
+
+data _,_⊢_ where
     num  : ℕ              → Γ , Γᵈ ⊢ numT
     char : Char           → Γ , Γᵈ ⊢ charT
     var  : t ∈ Γ          → Γ , Γᵈ ⊢ t
@@ -35,15 +40,13 @@ data _,_⊢_ : Ctx → DataCtx → Type → Set where
         → Γ , Γᵈ ⊢ u
 
     -- Tuple
-    ⟨⟩  : Γ , Γᵈ ⊢ tupleT []
-    _,_ : Γ , Γᵈ ⊢ t
-        → Γ , Γᵈ ⊢ (tupleT ts)
-        --------------------------
-        → Γ , Γᵈ ⊢ tupleT (t ∷ ts)
+    tuple : TypeResolver Γ Γᵈ ts
+        ------------------------
+        → Γ , Γᵈ ⊢ tupleT ts
 
     -- Record
     recDecl : (ts : List Type)
-        ---------------------
+        ----------------------
         → Γ , ts ∷ Γᵈ ⊢ unitT
     recInst : ts ∈ Γᵈ
         ------------------

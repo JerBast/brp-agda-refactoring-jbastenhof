@@ -20,16 +20,16 @@ open import HLL.DataContext
 
 -- Examples
 ex1 : [] , [] ⊢ tupleT (numT ∷ numT ∷ [])
-ex1 = num 42 , num 1337 , ⟨⟩
+ex1 = tuple (num 42 ∷ num 1337 ∷ []ᵀ)
 
 ex2 : [] , [] ⊢ tupleT ( (tupleT (numT ∷ numT ∷ [])) ∷ numT ∷ [] )
-ex2 = (num 42 , num 1337 , ⟨⟩) , num 7 , ⟨⟩
+ex2 = tuple (tuple (num 42 ∷ num 1337 ∷ []ᵀ) ∷ num 7 ∷ []ᵀ)
 
 ex3 : [] , [] ⊢ tupleT ( numT ∷ (tupleT (numT ∷ numT ∷ [])) ∷ [] )
-ex3 = num 7 , (num 42 , num 1337 , ⟨⟩) , ⟨⟩
+ex3 = tuple (num 7 ∷ (tuple (num 42 ∷ num 1337 ∷ []ᵀ)) ∷ []ᵀ)
 
 ex4 : [] , [] ⊢ tupleT (numT ∷ charT ∷ numT ∷ [])
-ex4 = num 42 , char 'A' , num 1337 , ⟨⟩
+ex4 = tuple (num 42 ∷ char 'A' ∷ num 1337 ∷ []ᵀ)
 
 ex5 : [] , (numT ∷ []) ∷ [] ⊢ unitT
 ex5 = recDecl (numT ∷ [])

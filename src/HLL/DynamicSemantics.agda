@@ -24,12 +24,11 @@ private
         vs : List Value
 
 infix  3 _,_⊢_↓_
-infixr 5 _↓,_
 
 data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value → Set
 
 data ReductionResolver (γ : Env Γ) (Γᵈ : DataCtx) : List Type → List Value → Set where
-    []ᵣ : ReductionResolver γ Γᵈ [] []
+    []ᴿ : ReductionResolver γ Γᵈ [] []
     _∷_ : {e : Γ , Γᵈ ⊢ t} → (γ , Γᵈ ⊢ e ↓ v) → ReductionResolver γ Γᵈ ts vs → ReductionResolver γ Γᵈ (t ∷ ts) (v ∷ vs)
 
 data _,_⊢_↓_ where
@@ -47,12 +46,10 @@ data _,_⊢_↓_ where
         → γ , Γᵈ ⊢ (f ∙ a) ↓ s
 
     -- Tuple
-    ↓⟨⟩  : γ , Γᵈ ⊢ ⟨⟩ ↓ tuple []
-    _↓,_ : {e₁ : Γ , Γᵈ ⊢ t} {e₂ : Γ , Γᵈ ⊢ tupleT ts}
-        → γ , Γᵈ ⊢ e₁ ↓ v
-        → γ , Γᵈ ⊢ e₂ ↓ tuple vs
-        -------------------------------------
-        → γ , Γᵈ ⊢ (e₁ , e₂) ↓ tuple (v ∷ vs)
+    ↓tuple : {e : TypeResolver Γ Γᵈ ts}
+        → ReductionResolver γ Γᵈ ts vs
+        ------------------------------
+        → γ , Γᵈ ⊢ tuple e ↓ tuple vs
     
     -- Record
     ↓recDecl : γ , ts ∷ Γᵈ ⊢ recDecl ts ↓ unit
