@@ -26,7 +26,13 @@ private
 infix  3 _,_⊢_↓_
 infixr 5 _↓,_
 
-data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value → Set where
+data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value → Set
+
+data ReductionResolver (γ : Env Γ) (Γᵈ : DataCtx) : List Type → List Value → Set where
+    []ᵣ : ReductionResolver γ Γᵈ [] []
+    _∷_ : {e : Γ , Γᵈ ⊢ t} → (γ , Γᵈ ⊢ e ↓ v) → ReductionResolver γ Γᵈ ts vs → ReductionResolver γ Γᵈ (t ∷ ts) (v ∷ vs)
+
+data _,_⊢_↓_ where
     ↓num  : ∀ {n}       → γ , Γᵈ ⊢ num n ↓ num n
     ↓char : ∀ {c}       → γ , Γᵈ ⊢ char c ↓ char c
     ↓var  : (x : t ∈ Γ) → γ , Γᵈ ⊢ var x ↓ γ x
@@ -50,7 +56,14 @@ data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value
     
     -- Record
     ↓recDecl : γ , ts ∷ Γᵈ ⊢ recDecl ts ↓ unit
-    -- ↓recInst : (x : ts ∈ Γᵈ) -- TODO: In search for magic
-    --     → (rc : rec vs)
-    --     -------------------------
-    --     → γ , Γᵈ ⊢ recInst ts ↓ rec vs
+    ↓recInst : (x : ts ∈ Γᵈ)
+        → ReductionResolver γ Γᵈ ts vs
+        -----------------------------
+        → γ , Γᵈ ⊢ recInst x ↓ rec vs
+
+    -- Sequence
+    ↓seq : {v₁ v₂ : Value} {e₁ : Γ , Γᵈ ⊢ t} {e₂ : Γ , Γᵈ ⊢ u}
+        → γ , Γᵈ ⊢ e₁ ↓ v₁
+        → γ , Γᵈ ⊢ e₂ ↓ v₂
+        -------------------------
+        → γ , Γᵈ ⊢ (e₁ ⟶ e₂) ↓ v₂
