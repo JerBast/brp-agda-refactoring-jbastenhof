@@ -14,6 +14,8 @@ open import HLL.Types
 open import HLL.Context
 open import HLL.DataContext
 
+open import Utils.Element
+
 -- See: https://plfa.github.io/DeBruijn/#abbreviating-de-bruijn-indices
 #_ : ∀ {Γ : Ctx} {Γᵈ : DataCtx} → (n : ℕ) → {n∈Γ : True (suc n ≤? length Γ)} → Γ , Γᵈ ⊢ lookup (toWitness n∈Γ)
 #_ n {n∈Γ} = var (count (toWitness n∈Γ))
@@ -42,4 +44,3 @@ ex7 = fun (var here) ∙ num 42
 
 ex8 : [] , (numT ∷ []) ∷ [] ⊢ recT (numT ∷ [])
 ex8 = recDecl (numT ∷ []) ⟶ recInst here
- 

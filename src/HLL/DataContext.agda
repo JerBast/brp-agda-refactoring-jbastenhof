@@ -8,11 +8,5 @@ open import Agda.Builtin.List
 
 open import HLL.Types
 
-private
-    variable
-        A : Set
-        as : List A
-        a a₁ a₂ : A
-
 DataCtx : Set
 DataCtx = List (List Type)

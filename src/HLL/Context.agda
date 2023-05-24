@@ -11,21 +11,10 @@ open import Data.List.Base using (_++_)
 
 open import HLL.Types
 
-private
-    variable
-        A : Set
-        as : List A
-        a a₁ a₂ : A
+open import Utils.Element
 
 Ctx : Set
 Ctx = List Type
-
-_؛_ : List Type → Ctx → Ctx
-Δ ؛ Γ = Δ ++ Γ
-
-data _∈_ : A → List A → Set where
-    here  : a ∈ (a ∷ as)
-    there : a₁ ∈ as → a₁ ∈ (a₂ ∷ as)
 
 length : Ctx → ℕ
 length []       = zero

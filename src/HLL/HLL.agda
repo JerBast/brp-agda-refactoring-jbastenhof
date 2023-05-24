@@ -12,6 +12,8 @@ open import HLL.Types
 open import HLL.Context
 open import HLL.DataContext
 
+open import Utils.Element
+
 private
     variable
         Γ : Ctx
@@ -29,11 +31,18 @@ data TypeResolver (Γ : Ctx) (Γᵈ : DataCtx) : List Type → Set where
     _∷_ : (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ (t ∷ ts) 
 
 data _,_⊢_ where
-    num  : ℕ              → Γ , Γᵈ ⊢ numT
-    char : Char           → Γ , Γᵈ ⊢ charT
-    var  : t ∈ Γ          → Γ , Γᵈ ⊢ t
-    fun  : t ∷ Γ , Γᵈ ⊢ u → Γ , Γᵈ ⊢ t ⇒ u 
-    fix  : t ∷ Γ , Γᵈ ⊢ t → Γ , Γᵈ ⊢ t
+    num  : ℕ
+        ---------------
+        → Γ , Γᵈ ⊢ numT
+    char : Char
+        ----------------
+        → Γ , Γᵈ ⊢ charT
+    var  : t ∈ Γ
+        ------------
+        → Γ , Γᵈ ⊢ t
+    fun  : t ∷ Γ , Γᵈ ⊢ u
+        ----------------
+        → Γ , Γᵈ ⊢ t ⇒ u
     _∙_  : Γ , Γᵈ ⊢ t ⇒ u
         → Γ , Γᵈ ⊢ t
         ------------

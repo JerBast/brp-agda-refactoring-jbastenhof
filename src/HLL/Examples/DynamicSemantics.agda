@@ -16,6 +16,8 @@ open import HLL.Context
 open import HLL.DataContext
 open import HLL.DynamicSemantics
 
+open import Utils.Element
+
 -- See: https://plfa.github.io/DeBruijn/#abbreviating-de-bruijn-indices
 #_ : ∀ {Γ : Ctx} {Γᵈ : DataCtx} → (n : ℕ) → {n∈Γ : True (suc n ≤? length Γ)} → Γ , Γᵈ ⊢ lookup (toWitness n∈Γ)
 #_ n {n∈Γ} = var (count (toWitness n∈Γ))
