@@ -1,5 +1,5 @@
 {-
-    Types for the HLL.
+    Types and declarations for the HLL.
  -}
 module HLL.Types where
 
@@ -14,3 +14,6 @@ data Type : Set where
     _⇒_    : Type → Type → Type
     tupleT : List Type → Type
     recT   : List Type → Type
+
+data Decl : Set where
+    recDecl : List Type → Decl

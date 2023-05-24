@@ -54,6 +54,6 @@ data _,_⊢_ where
         → Γ , Γᵈ ⊢ tupleT ts
 
     -- Record
-    recInst : ts ∈ Γᵈ
-        ------------------
+    recInst : (recDecl ts) ∈ Γᵈ
+        -----------------------
         → Γ , Γᵈ ⊢ recT ts

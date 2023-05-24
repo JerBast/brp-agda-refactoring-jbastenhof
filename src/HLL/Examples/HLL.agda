@@ -35,3 +35,6 @@ ex4 = tuple (num 42 ∷ char 'A' ∷ num 1337 ∷ []ᵀ)
 
 ex5 : [] , [] ⊢ numT
 ex5 = fun (var here) ∙ num 42
+
+ex6 : [] , recDecl (numT ∷ charT ∷ charT ∷ []) ∷ [] ⊢ recT (numT ∷ charT ∷ charT ∷ [])
+ex6 = recInst here
