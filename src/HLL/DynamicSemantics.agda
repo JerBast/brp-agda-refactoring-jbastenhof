@@ -25,13 +25,15 @@ private
         v  : Value
         vs : List Value
 
+        tr : TypeResolver Γ Γᵈ ts
+
 infix  3 _,_⊢_↓_
 
 data _,_⊢_↓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value → Set
 
-data ReductionResolver (γ : Env Γ) (Γᵈ : DataCtx) : List Type → List Value → Set where
-    []ᴿ : ReductionResolver γ Γᵈ [] []
-    _∷_ : {e : Γ , Γᵈ ⊢ t} → (γ , Γᵈ ⊢ e ↓ v) → ReductionResolver γ Γᵈ ts vs → ReductionResolver γ Γᵈ (t ∷ ts) (v ∷ vs)
+data ReductionResolver (γ : Env Γ) (Γᵈ : DataCtx) : TypeResolver Γ Γᵈ ts → List Value → Set where
+    []ᴿ : ReductionResolver γ Γᵈ []ᵀ []
+    _∷_ : {e : Γ , Γᵈ ⊢ t} → (γ , Γᵈ ⊢ e ↓ v) → ReductionResolver γ Γᵈ tr vs → ReductionResolver γ Γᵈ (e ∷ tr) (v ∷ vs)
 
 data _,_⊢_↓_ where
     ↓num  : ∀ {n}       → γ , Γᵈ ⊢ num n ↓ num n
@@ -48,13 +50,14 @@ data _,_⊢_↓_ where
         → γ , Γᵈ ⊢ (f ∙ a) ↓ s
 
     -- Tuple
-    ↓tuple : {e : TypeResolver Γ Γᵈ ts}
-        → ReductionResolver γ Γᵈ ts vs
+    ↓tuple : {tr : TypeResolver Γ Γᵈ ts}
+        → ReductionResolver γ Γᵈ tr vs
         ------------------------------
-        → γ , Γᵈ ⊢ tuple e ↓ tuple vs
+        → γ , Γᵈ ⊢ tuple tr ↓ tuple vs
     
     -- Record
-    ↓recInst : (x : ts ∈ Γᵈ)
-        → ReductionResolver γ Γᵈ ts vs
-        -----------------------------
-        → γ , Γᵈ ⊢ recInst x ↓ rec vs
+    ↓recInst : {tr : TypeResolver Γ Γᵈ ts}
+        → (x : (recDecl ts) ∈ Γᵈ)
+        → ReductionResolver γ Γᵈ tr vs
+        --------------------------------
+        → γ , Γᵈ ⊢ recInst x tr ↓ rec vs

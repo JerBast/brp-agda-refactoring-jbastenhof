@@ -37,4 +37,4 @@ ex5 : [] , [] ⊢ numT
 ex5 = fun (var here) ∙ num 42
 
 ex6 : [] , recDecl (numT ∷ charT ∷ charT ∷ []) ∷ [] ⊢ recT (numT ∷ charT ∷ charT ∷ [])
-ex6 = recInst here
+ex6 = recInst here (num 42 ∷ char 'A' ∷ char 'B' ∷ []ᵀ)

@@ -55,5 +55,6 @@ data _,_⊢_ where
 
     -- Record
     recInst : (recDecl ts) ∈ Γᵈ
+        → TypeResolver Γ Γᵈ ts
         -----------------------
         → Γ , Γᵈ ⊢ recT ts
