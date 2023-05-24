@@ -54,15 +54,6 @@ data _,_⊢_ where
         → Γ , Γᵈ ⊢ tupleT ts
 
     -- Record
-    recDecl : (ts : List Type)
-        ----------------------
-        → Γ , ts ∷ Γᵈ ⊢ unitT
     recInst : ts ∈ Γᵈ
         ------------------
         → Γ , Γᵈ ⊢ recT ts
-
-    -- Sequence
-    _⟶_ : Γ , Γᵈ ⊢ t
-        → Γ , Γᵈ ⊢ u
-        ------------
-        → Γ , Γᵈ ⊢ u

@@ -31,9 +31,3 @@ ex2 = ↓app ↓fun (↓var here) ↓num
 
 ex3 : ‵[] , [] ⊢ tuple (char 'Z' ∷ num 10 ∷ []ᵀ) ↓ tuple (char 'Z' ∷ num 10 ∷ [])
 ex3 = ↓tuple (↓char ∷ ↓num ∷ []ᴿ)
-
-ex4 : ‵[] , (numT ∷ []) ∷ [] ⊢ recDecl (numT ∷ []) ⟶ recInst here ↓ rec (num 42 ∷ [])
-ex4 = ↓seq ↓recDecl (↓recInst here (↓num ∷ []ᴿ))
-
-ex5 : ‵[] , (charT ∷ charT ∷ numT ∷ []) ∷ [] ⊢ recDecl (charT ∷ charT ∷ numT ∷ []) ⟶ recInst here ↓ rec (char 'A' ∷ char 'B' ∷ num 42 ∷ [])
-ex5 = ↓seq ↓recDecl (↓recInst here (↓char ∷ ↓char ∷ ↓num ∷ []ᴿ))

@@ -54,15 +54,7 @@ data _,_⊢_↓_ where
         → γ , Γᵈ ⊢ tuple e ↓ tuple vs
     
     -- Record
-    ↓recDecl : γ , ts ∷ Γᵈ ⊢ recDecl ts ↓ unit
     ↓recInst : (x : ts ∈ Γᵈ)
         → ReductionResolver γ Γᵈ ts vs
         -----------------------------
         → γ , Γᵈ ⊢ recInst x ↓ rec vs
-
-    -- Sequence
-    ↓seq : {v₁ v₂ : Value} {e₁ : Γ , Γᵈ ⊢ t} {e₂ : Γ , Γᵈ ⊢ u}
-        → γ , Γᵈ ⊢ e₁ ↓ v₁
-        → γ , Γᵈ ⊢ e₂ ↓ v₂
-        -------------------------
-        → γ , Γᵈ ⊢ (e₁ ⟶ e₂) ↓ v₂
