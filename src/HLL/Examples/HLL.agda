@@ -14,6 +14,8 @@ open import HLL.Types
 open import HLL.Context
 open import HLL.DataContext
 
+open import Utils.Element
+
 -- See: https://plfa.github.io/DeBruijn/#abbreviating-de-bruijn-indices
 #_ : ∀ {Γ : Ctx} {Γᵈ : DataCtx} → (n : ℕ) → {n∈Γ : True (suc n ≤? length Γ)} → Γ , Γᵈ ⊢ lookup (toWitness n∈Γ)
 #_ n {n∈Γ} = var (count (toWitness n∈Γ))
@@ -31,15 +33,8 @@ ex3 = tuple (num 7 ∷ (tuple (num 42 ∷ num 1337 ∷ []ᵀ)) ∷ []ᵀ)
 ex4 : [] , [] ⊢ tupleT (numT ∷ charT ∷ numT ∷ [])
 ex4 = tuple (num 42 ∷ char 'A' ∷ num 1337 ∷ []ᵀ)
 
-ex5 : [] , (numT ∷ []) ∷ [] ⊢ unitT
-ex5 = recDecl (numT ∷ [])
+ex5 : [] , [] ⊢ numT
+ex5 = fun (var here) ∙ num 42
 
-ex6 : [] , (numT ∷ charT ∷ numT ∷ []) ∷ [] ⊢ unitT
-ex6 = recDecl (numT ∷ charT ∷ numT ∷ [])
-
-ex7 : [] , [] ⊢ numT
-ex7 = fun (var here) ∙ num 42
-
-ex8 : [] , (numT ∷ []) ∷ [] ⊢ recT (numT ∷ [])
-ex8 = recDecl (numT ∷ []) ⟶ recInst here
- 
+ex6 : [] , recDecl (numT ∷ charT ∷ charT ∷ []) ∷ [] ⊢ recT (numT ∷ charT ∷ charT ∷ [])
+ex6 = recInst here (num 42 ∷ char 'A' ∷ char 'B' ∷ []ᵀ)

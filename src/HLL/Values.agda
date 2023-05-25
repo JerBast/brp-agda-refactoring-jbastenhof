@@ -10,6 +10,8 @@ open import HLL.Types
 open import HLL.Context
 open import HLL.DataContext
 
+open import Utils.Element
+
 private
     variable
         Γ : Ctx
