@@ -17,8 +17,8 @@ open import HLL.DataContext
 open import Utils.Element
 
 -- See: https://plfa.github.io/DeBruijn/#abbreviating-de-bruijn-indices
-#_ : ∀ {Γ : Ctx} {Γᵈ : DataCtx} → (n : ℕ) → {n∈Γ : True (suc n ≤? length Γ)} → Γ , Γᵈ ⊢ lookup (toWitness n∈Γ)
-#_ n {n∈Γ} = var (count (toWitness n∈Γ))
+#_ : ∀ {Γ : Ctx} {Γᵈ : DataCtx} → (n : ℕ) → {n∈Γ : True (suc n ≤? HLL.Context.length Γ)} → Γ , Γᵈ ⊢ HLL.Context.lookup (toWitness n∈Γ)
+#_ n {n∈Γ} = var (HLL.Context.count (toWitness n∈Γ))
 
 -- Examples
 ex1 : [] , [] ⊢ tupleT (numT ∷ numT ∷ [])
