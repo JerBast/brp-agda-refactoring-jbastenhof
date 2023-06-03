@@ -30,6 +30,10 @@ data TypeResolver (Γ : Ctx) (Γᵈ : DataCtx) : List Type → Set where
     []ᵀ : TypeResolver Γ Γᵈ []
     _∷_ : (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ (t ∷ ts) 
 
+data _∈ᵀ_ : (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ ts → Set where
+    here  : {e₁ : Γ , Γᵈ ⊢ t}                   {tr : TypeResolver Γ Γᵈ ts}            → e₁ ∈ᵀ (e₁ ∷ tr)
+    there : {e₁ : Γ , Γᵈ ⊢ t} {e₂ : Γ , Γᵈ ⊢ u} {tr : TypeResolver Γ Γᵈ ts} → e₁ ∈ᵀ tr → e₁ ∈ᵀ (e₂ ∷ tr)
+
 data _,_⊢_ where
     num  : ℕ
         ---------------

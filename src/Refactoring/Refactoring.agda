@@ -5,141 +5,186 @@ open import Agda.Builtin.Char
 open import Agda.Builtin.List
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
-open import Data.List.Base using (map; _++_; reverse)
-
-open import Data.Nat.Properties using (_≤?_)
-open import Relation.Nullary.Decidable using (True; toWitness)
+open import Data.List.Base using (_++_; _∷ʳ_)
 
 open import HLL.HLL
 open import HLL.Types
-open import HLL.Context
+open import HLL.Context hiding (length)
 open import HLL.DataContext
 
 open import Utils.Element
 
 private
     variable
-        t   : Type
-        ts  : List Type
+        t t'   : Type
+        ts ts' : List Type
 
         d : Decl
 
-        Γ  : Ctx
-        Γᵈ : DataCtx
+        Γ Γ'   : Ctx
+        Γᵈ Γᵈ' : DataCtx
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Extract the intrinsic type from a syntax term
-hll-to-type : Γ , Γᵈ ⊢ t → Type
-hll-to-type {t = t} _ = t
-
--- Extract the types derived from the terms that compose the type resolver
-type-resolver-to-type : TypeResolver Γ Γᵈ ts → List Type
-type-resolver-to-type {ts = ts} _ = ts
+tr-to-type-list : TypeResolver Γ Γᵈ ts → List Type
+tr-to-type-list {ts = ts} _ = ts
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Eliminate tuples from types
-ref-ttr-types : Type → Type
+ref-type : Type → Type
 
-ref-ttr-map-types : List Type → List Type
-ref-ttr-map-types []       = []
-ref-ttr-map-types (t ∷ ts) = (ref-ttr-types t) ∷ (ref-ttr-map-types ts)
+ref-type-list : List Type → List Type
+ref-type-list []       = []
+ref-type-list (t ∷ ts) = (ref-type t) ∷ (ref-type-list ts)
 
-ref-ttr-types numT        = numT
-ref-ttr-types charT       = charT
-ref-ttr-types unitT       = unitT
-ref-ttr-types (t ⇒ u)     = (ref-ttr-types t) ⇒ (ref-ttr-types u)
-ref-ttr-types (tupleT ts) = recT (ref-ttr-map-types ts)
-ref-ttr-types (recT ts)   = recT (ref-ttr-map-types ts)
+ref-type numT        = numT
+ref-type charT       = charT
+ref-type unitT       = unitT
+ref-type (t ⇒ u)     = (ref-type t) ⇒ (ref-type u)
+ref-type (tupleT ts) = recT (ref-type-list ts)
+ref-type (recT ts)   = recT (ref-type-list ts)
 
------------------------------------------------------------------------------------------------------------------------------------------------------
+ref-ctx : Ctx → Ctx
+ref-ctx []      = []
+ref-ctx (t ∷ c) = (ref-type t) ∷ (ref-ctx c)
 
--- Eliminate tuples from declarations
-ref-ttr-decls : Decl → Decl
-ref-ttr-decls (recDecl ts) = recDecl (ref-ttr-map-types ts)
+ref-ctx-lookup : t ∈ Γ → (ref-type t) ∈ (ref-ctx Γ)
+ref-ctx-lookup here      = here
+ref-ctx-lookup (there x) = there (ref-ctx-lookup x)
 
------------------------------------------------------------------------------------------------------------------------------------------------------
+ref-decl : Decl → Decl
+ref-decl (recDecl ts) = recDecl (ref-type-list ts)
 
--- Eliminate tuples from the type context 
-ref-ttr-ctx : Ctx → Ctx
-ref-ttr-ctx []      = []
-ref-ttr-ctx (t ∷ c) = (ref-ttr-types t) ∷ (ref-ttr-ctx c)
+ref-d-ctx : DataCtx → DataCtx
+ref-d-ctx []       = []
+ref-d-ctx (d ∷ ds) = (ref-decl d) ∷ (ref-d-ctx ds)
 
--- Ensure that lookups are preserved, but for a different type (in case of a tuple)
-ref-ttr-ctx-lookup : t ∈ Γ → (ref-ttr-types t) ∈ (ref-ttr-ctx Γ)
-ref-ttr-ctx-lookup here      = here
-ref-ttr-ctx-lookup (there x) = there (ref-ttr-ctx-lookup x)
+ref-d-ctx-lookup : d ∈ Γᵈ → (ref-decl d) ∈ (ref-d-ctx Γᵈ)
+ref-d-ctx-lookup here      = here
+ref-d-ctx-lookup (there x) = there (ref-d-ctx-lookup x)
 
------------------------------------------------------------------------------------------------------------------------------------------------------
-
--- Eliminate tuples from the declaration context
-ref-ttr-data-ctx : DataCtx → DataCtx
-ref-ttr-data-ctx []      = []
-ref-ttr-data-ctx (d ∷ c) = (ref-ttr-decls d) ∷ (ref-ttr-data-ctx c)
-
--- Ensure that lookups are preserved, but that declarations might differ (in case of inner tuple type)
-ref-ttr-data-ctx-lookup : d ∈ Γᵈ → (ref-ttr-decls d) ∈ (ref-ttr-data-ctx Γᵈ)
-ref-ttr-data-ctx-lookup here      = here
-ref-ttr-data-ctx-lookup (there x) = there (ref-ttr-data-ctx-lookup x)
-
--- Ensure that lookups are preserved in extended context, but that declarations might differ (in case of inner tuple type)
-ref-ttr-data-ctx-ext-lookup : (Γᵈ' : DataCtx) → d ∈ Γᵈ → (ref-ttr-decls d) ∈ ((ref-ttr-data-ctx Γᵈ) ++ Γᵈ')
-ref-ttr-data-ctx-ext-lookup Γᵈ' here      = here
-ref-ttr-data-ctx-ext-lookup Γᵈ' (there x) = there (ref-ttr-data-ctx-ext-lookup Γᵈ' x)
-
--- Create lookup for extended data environment (TODO)
--- postulate ref-ttr-data-ctx-ext-create-lookup : (Γᵈ : DataCtx) → (n : ℕ) → d ∈ Γᵈ
-
-ref-ttr-data-ctx-ext-create-lookup : (Γᵈ : DataCtx) → (n : ℕ) → {n∈Γᵈ : True (suc n ≤? HLL.DataContext.length Γᵈ)} → HLL.DataContext.lookup (toWitness n∈Γᵈ) ∈ Γᵈ
-ref-ttr-data-ctx-ext-create-lookup _ n {n∈Γᵈ} = HLL.DataContext.count (toWitness n∈Γᵈ)
-
-ref-ttr-data-ctx-ext-create-rec-decl-lookup : (Γᵈ : DataCtx) → {!   !} → (recDecl ts) ∈ Γᵈ
-ref-ttr-data-ctx-ext-create-rec-decl-lookup Γᵈ = {!  !}
+ref-d-ctx-ext-lookup : d ∈ Γᵈ → (Γᵈ' : DataCtx) → (ref-decl d) ∈ (ref-d-ctx (Γᵈ' ++ Γᵈ))
+ref-d-ctx-ext-lookup x []        = ref-d-ctx-lookup x
+ref-d-ctx-ext-lookup x (_ ∷ Γᵈ') = there (ref-d-ctx-ext-lookup x Γᵈ')
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Convert all tuple occurrences to record declarations in pre-order traversal.
--- Note: the result is in reverse order.
-ref-ttr-tuple-to-decls : (Γ , Γᵈ ⊢ t) → List Decl
+ref-tuples-to-decls : (e : Γ , Γᵈ ⊢ t) → List Decl
 
-ref-ttr-tuple-to-decls-tr-helper : TypeResolver Γ Γᵈ ts → List Decl
-ref-ttr-tuple-to-decls-tr-helper []ᵀ      = []
-ref-ttr-tuple-to-decls-tr-helper (e ∷ tr) = (ref-ttr-tuple-to-decls e) ++ (ref-ttr-tuple-to-decls-tr-helper tr)
+ref-tuples-to-decls-tr : (tr : TypeResolver Γ Γᵈ ts) → List Decl
+ref-tuples-to-decls-tr []ᵀ      = []
+ref-tuples-to-decls-tr (e ∷ tr) = (ref-tuples-to-decls e) ++ (ref-tuples-to-decls-tr tr)
 
-ref-ttr-tuple-to-decls (num n)        = []
-ref-ttr-tuple-to-decls (char c)       = []
-ref-ttr-tuple-to-decls (var x)        = []
-ref-ttr-tuple-to-decls (fun b)        = ref-ttr-tuple-to-decls b
-ref-ttr-tuple-to-decls (f ∙ a)        = (ref-ttr-tuple-to-decls f) ++ (ref-ttr-tuple-to-decls a)
-ref-ttr-tuple-to-decls (tuple tr)     = (recDecl (ref-ttr-map-types (type-resolver-to-type tr))) ∷ (ref-ttr-tuple-to-decls-tr-helper tr)
-ref-ttr-tuple-to-decls (recInst x tr) = ref-ttr-tuple-to-decls-tr-helper tr
-
-ref-ttr-ttd-extend-data-ctx : (e : Γ , Γᵈ ⊢ t) → DataCtx
-ref-ttr-ttd-extend-data-ctx {Γᵈ = Γᵈ} e = Γᵈ ++ (reverse (ref-ttr-tuple-to-decls e))
-
--- TODO: Make more efficient?
-ref-ttr-tuple-remaining-cnt : (Γ , Γᵈ ⊢ t) → ℕ
-ref-ttr-tuple-remaining-cnt e = Data.List.Base.length (ref-ttr-tuple-to-decls e)
+ref-tuples-to-decls (num n)        = []
+ref-tuples-to-decls (char v)       = []
+ref-tuples-to-decls (var x)        = []
+ref-tuples-to-decls (fun b)        = ref-tuples-to-decls b
+ref-tuples-to-decls (f ∙ a)        = (ref-tuples-to-decls f) ++ (ref-tuples-to-decls a)
+ref-tuples-to-decls (tuple tr)     = (recDecl (tr-to-type-list tr)) ∷ (ref-tuples-to-decls-tr tr)
+ref-tuples-to-decls (recInst x tr) = ref-tuples-to-decls-tr tr
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-ref-ttr-helper : (Γᵈ' : DataCtx) → ℕ → (e : Γ , Γᵈ ⊢ t) → ((ref-ttr-ctx Γ) , ((ref-ttr-data-ctx Γᵈ) ++ Γᵈ') ⊢ (ref-ttr-types t))
+_++ᵀ_ : TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ ts' → TypeResolver Γ Γᵈ (ts ++ ts')
+[]ᵀ       ++ᵀ tr₂ = tr₂
+(e ∷ tr₁) ++ᵀ tr₂ = e ∷ (tr₁ ++ᵀ tr₂)
 
-ref-ttr-helper-tr-helper : (Γᵈ' : DataCtx) → ℕ → TypeResolver Γ Γᵈ ts → TypeResolver (ref-ttr-ctx Γ) ((ref-ttr-data-ctx Γᵈ) ++ Γᵈ') (ref-ttr-map-types ts)
-ref-ttr-helper-tr-helper Γᵈ' idx []ᵀ      = []ᵀ
-ref-ttr-helper-tr-helper Γᵈ' idx (e ∷ tr) = (ref-ttr-helper Γᵈ' idx e) ∷ (ref-ttr-helper-tr-helper Γᵈ' (idx + (ref-ttr-tuple-remaining-cnt e)) tr)
+_∷ᵀʳ_ : TypeResolver Γ Γᵈ ts → (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ (ts ∷ʳ t)
+tr ∷ᵀʳ e = tr ++ᵀ (e ∷ []ᵀ) 
 
-ref-ttr-helper           Γᵈ' idx (num n)        = num n
-ref-ttr-helper           Γᵈ' idx (char c)       = char c
-ref-ttr-helper           Γᵈ' idx (var x)        = var (ref-ttr-ctx-lookup x)
-ref-ttr-helper           Γᵈ' idx (fun b)        = fun (ref-ttr-helper Γᵈ' idx b)
-ref-ttr-helper           Γᵈ' idx e@(f ∙ a)      = (ref-ttr-helper Γᵈ' idx f) ∙ (ref-ttr-helper Γᵈ' (idx + (ref-ttr-tuple-remaining-cnt e)) a)
-ref-ttr-helper {Γᵈ = Γᵈ} Γᵈ' idx (tuple tr)     = recInst {!   !} (ref-ttr-helper-tr-helper Γᵈ' (suc idx) tr)
--- ref-ttr-helper {Γᵈ = Γᵈ} Γᵈ' idx (tuple tr)     = recInst (ref-ttr-data-ctx-ext-create-lookup (idx + Data.List.Base.length Γᵈ)) (ref-ttr-helper-tr-helper Γᵈ' (suc idx) tr)
--- ref-ttr-helper {Γᵈ = Γᵈ} Γᵈ' idx (tuple tr)     = recInst (ref-ttr-data-ctx-ext-create-lookup ((ref-ttr-data-ctx Γᵈ) ++ Γᵈ') (idx + Data.List.Base.length Γᵈ)) (ref-ttr-helper-tr-helper Γᵈ' (suc idx) tr)
-ref-ttr-helper           Γᵈ' idx (recInst x tr) = recInst (ref-ttr-data-ctx-ext-lookup Γᵈ' x) (ref-ttr-helper-tr-helper Γᵈ' idx tr)
+-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-ref-ttr : (e : Γ , Γᵈ ⊢ t) → ((ref-ttr-ctx Γ) , ((ref-ttr-data-ctx Γᵈ) ++ (reverse (ref-ttr-tuple-to-decls e))) ⊢ (ref-ttr-types t))
-ref-ttr {Γᵈ = Γᵈ} e = ref-ttr-helper ((reverse (ref-ttr-tuple-to-decls e))) zero e
+private
+    variable
+        Γ₁ Γ₂ Γ₃ Γ₄ : Ctx
+        
+        t₁ t₂ t₃ t₄ : Type
+        ts₁ ts₂     : List Type
+
+data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
+    e-root : (e : Γ , Γᵈ ⊢ t) → EmbedInto e e
     
+    e-func : {e : Γ , Γᵈ ⊢ t} {e₁ : t₂ ∷ Γ₁ , Γᵈ ⊢ t₁}
+        → EmbedInto (fun e₁) e
+        ----------------------
+        → EmbedInto e₁ e
+    
+    e-app-l : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ t₁} {e₂ : Γ₂ , Γᵈ ⊢ t₁ ⇒ t₂}
+        → EmbedInto (e₂ ∙ e₁) e
+        -----------------------
+        → EmbedInto e₂ e
+    
+    e-app-r : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ t₁} {e₂ : Γ₂ , Γᵈ ⊢ t₁ ⇒ t₂}
+        → EmbedInto (e₂ ∙ e₁) e
+        -----------------------
+        → EmbedInto e₁ e
+    
+    -- e-func : {e : Γ , Γᵈ ⊢ t} {e₁ : t₂ ∷ Γ₁ , Γᵈ ⊢ t₁}
+    --     → EmbedInto e e₁
+    --     ----------------------
+    --     → EmbedInto e (fun e₁)
+    
+    -- e-app-l : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ t₁} {e₂ : Γ₂ , Γᵈ ⊢ t₁ ⇒ t₂}
+    --     → EmbedInto (e₂ ∙ e₁) e
+    --     → EmbedInto e₂ (e₂ ∙ e₁)
+    
+    -- e-app-r : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ t₁} {e₂ : Γ₂ , Γᵈ ⊢ t₁ ⇒ t₂}
+    --     → EmbedInto (e₂ ∙ e₁) e
+    --     → EmbedInto e₁ (e₂ ∙ e₁)
+    
+    -- e-tup-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁}
+    --     → (tr₁ : TypeResolver Γ₁ Γᵈ ts)
+    --     → (tr₂ : TypeResolver Γ₁ Γᵈ ts')
+    --     → EmbedInto (tuple (tr₁ ++ᵀ (e₁ ∷ tr₂))) e
+    --     → EmbedInto e₁ (tuple (tr₁ ++ᵀ (e₁ ∷ tr₂)))
+    
+    -- e-tup-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts}
+    --     → EmbedInto (tuple (e₁ ∷ tr)) e
+    --     → EmbedInto e₁ (tuple (e₁ ∷ tr))
+    
+    -- e-tup-tr : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts}
+    --     → EmbedInto (tuple (e₁ ∷ tr)) e
+    --     → EmbedInto (tuple tr) (tuple (e₁ ∷ tr))
+    
+    -- e-rec-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts}
+    --     → EmbedInto (recInst {!   !} (e₁ ∷ tr)) e
+    --     → EmbedInto e₁ (recInst {!   !} (e₁ ∷ tr))
+    
+    -- e-rec-tr : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts} {x : recDecl (t₁ ∷ ts) ∈ Γᵈ}
+    --     → EmbedInto (recInst x (e₁ ∷ tr)) e
+    --     → EmbedInto (recInst {! x  !} tr) (recInst {!   !} (e₁ ∷ tr))
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+d-ctx-ext-lookup-l : d ∈ Γᵈ → (Γᵈ' : DataCtx) → d ∈ (Γᵈ' ++ Γᵈ)
+d-ctx-ext-lookup-l x []        = x
+d-ctx-ext-lookup-l x (_ ∷ Γᵈ') = there (d-ctx-ext-lookup-l x Γᵈ')
+
+d-ctx-ext-lookup-r : d ∈ Γᵈ → (Γᵈ' : DataCtx) → d ∈ (Γᵈ ++ Γᵈ')
+d-ctx-ext-lookup-r here Γᵈ'      = here
+d-ctx-ext-lookup-r (there x) Γᵈ' = there (d-ctx-ext-lookup-r x Γᵈ')
+
+ref-t-lookup : {e : Γ , Γᵈ ⊢ t} {e' : Γ' , Γᵈ ⊢ t'} → d ∈ (ref-tuples-to-decls e) → EmbedInto e e' → d ∈ (ref-tuples-to-decls e')
+ref-t-lookup x (e-root _)             = x
+ref-t-lookup x (e-func ev)            = ref-t-lookup x ev
+ref-t-lookup x (e-app-l {e₁ = e₁} ev) = ref-t-lookup (d-ctx-ext-lookup-r x (ref-tuples-to-decls e₁)) ev
+ref-t-lookup x (e-app-r {e₂ = e₂} ev) = ref-t-lookup (d-ctx-ext-lookup-l x (ref-tuples-to-decls e₂)) ev
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+ref-h : {e' : Γ' , Γᵈ ⊢ t'} → (e : Γ , Γᵈ ⊢ t) → EmbedInto e e' → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e') ++ Γᵈ) ⊢ ref-type t
+ref-h                     (num n)        ev = num n
+ref-h                     (char c)       ev = char c
+ref-h                     (var x)        ev = var (ref-ctx-lookup x)
+ref-h                     (fun b)        ev = fun (ref-h b (e-func ev))
+ref-h                     (f ∙ a)        ev = (ref-h f (e-app-l ev)) ∙ (ref-h a (e-app-r ev))
+ref-h {Γᵈ = Γᵈ} {e' = e'} (tuple tr)     ev = recInst (ref-d-ctx-lookup (d-ctx-ext-lookup-r (ref-t-lookup here ev) Γᵈ)) {!   !}
+ref-h {e' = e'}           (recInst x tr) ev = recInst (ref-d-ctx-ext-lookup x (ref-tuples-to-decls e')) {!   !}
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+ref : (e : Γ , Γᵈ ⊢ t) → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e) ++ Γᵈ) ⊢ ref-type t
+ref e = ref-h e (e-root e)
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+ 
