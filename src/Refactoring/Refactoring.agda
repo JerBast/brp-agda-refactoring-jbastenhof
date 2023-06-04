@@ -5,12 +5,12 @@ open import Agda.Builtin.Char
 open import Agda.Builtin.List
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
-open import Data.List.Base using (_++_; _∷ʳ_)
+open import Data.List.Base using (_++_)
 
 open import HLL.HLL
 open import HLL.Types
-open import HLL.Context hiding (length)
-open import HLL.DataContext
+open import HLL.Context using (Ctx)
+open import HLL.DataContext using (DataCtx)
 
 open import Utils.Element
 
@@ -85,15 +85,6 @@ ref-tuples-to-decls (recInst x tr) = ref-tuples-to-decls-tr tr
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-_++ᵀ_ : TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ ts' → TypeResolver Γ Γᵈ (ts ++ ts')
-[]ᵀ       ++ᵀ tr₂ = tr₂
-(e ∷ tr₁) ++ᵀ tr₂ = e ∷ (tr₁ ++ᵀ tr₂)
-
-_∷ᵀʳ_ : TypeResolver Γ Γᵈ ts → (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ (ts ∷ʳ t)
-tr ∷ᵀʳ e = tr ++ᵀ (e ∷ []ᵀ) 
-
------------------------------------------------------------------------------------------------------------------------------------------------------
-
 private
     variable
         Γ₁ Γ₂ Γ₃ Γ₄ : Ctx
@@ -101,8 +92,20 @@ private
         t₁ t₂ t₃ t₄ : Type
         ts₁ ts₂     : List Type
 
+data EmbedIntoTR : TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ ts' → Set where
+    tr-root : (tr : TypeResolver Γ Γᵈ ts)
+        ---------------------------------
+        → EmbedIntoTR tr tr
+    
+    tr-el : {e : Γ , Γᵈ ⊢ t} {tr₁ : TypeResolver Γ Γᵈ ts₁} {tr₂ : TypeResolver Γ Γᵈ ts₂}
+        → EmbedIntoTR (e ∷ tr₁) tr₂
+        ---------------------------
+        → EmbedIntoTR tr₁ tr₂
+
 data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
-    e-root : (e : Γ , Γᵈ ⊢ t) → EmbedInto e e
+    e-root : (e : Γ , Γᵈ ⊢ t)
+        ---------------------
+        → EmbedInto e e
     
     e-func : {e : Γ , Γᵈ ⊢ t} {e₁ : t₂ ∷ Γ₁ , Γᵈ ⊢ t₁}
         → EmbedInto (fun e₁) e
@@ -119,40 +122,17 @@ data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
         -----------------------
         → EmbedInto e₁ e
     
-    -- e-func : {e : Γ , Γᵈ ⊢ t} {e₁ : t₂ ∷ Γ₁ , Γᵈ ⊢ t₁}
-    --     → EmbedInto e e₁
-    --     ----------------------
-    --     → EmbedInto e (fun e₁)
+    e-tup-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts₁}
+        → e₁ ∈ᵀ tr
+        → EmbedInto (tuple tr) e
+        ------------------------
+        → EmbedInto e₁ e
     
-    -- e-app-l : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ t₁} {e₂ : Γ₂ , Γᵈ ⊢ t₁ ⇒ t₂}
-    --     → EmbedInto (e₂ ∙ e₁) e
-    --     → EmbedInto e₂ (e₂ ∙ e₁)
-    
-    -- e-app-r : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ t₁} {e₂ : Γ₂ , Γᵈ ⊢ t₁ ⇒ t₂}
-    --     → EmbedInto (e₂ ∙ e₁) e
-    --     → EmbedInto e₁ (e₂ ∙ e₁)
-    
-    -- e-tup-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁}
-    --     → (tr₁ : TypeResolver Γ₁ Γᵈ ts)
-    --     → (tr₂ : TypeResolver Γ₁ Γᵈ ts')
-    --     → EmbedInto (tuple (tr₁ ++ᵀ (e₁ ∷ tr₂))) e
-    --     → EmbedInto e₁ (tuple (tr₁ ++ᵀ (e₁ ∷ tr₂)))
-    
-    -- e-tup-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts}
-    --     → EmbedInto (tuple (e₁ ∷ tr)) e
-    --     → EmbedInto e₁ (tuple (e₁ ∷ tr))
-    
-    -- e-tup-tr : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts}
-    --     → EmbedInto (tuple (e₁ ∷ tr)) e
-    --     → EmbedInto (tuple tr) (tuple (e₁ ∷ tr))
-    
-    -- e-rec-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts}
-    --     → EmbedInto (recInst {!   !} (e₁ ∷ tr)) e
-    --     → EmbedInto e₁ (recInst {!   !} (e₁ ∷ tr))
-    
-    -- e-rec-tr : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts} {x : recDecl (t₁ ∷ ts) ∈ Γᵈ}
-    --     → EmbedInto (recInst x (e₁ ∷ tr)) e
-    --     → EmbedInto (recInst {! x  !} tr) (recInst {!   !} (e₁ ∷ tr))
+    e-rec-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts₁} {x : (recDecl ts₁) ∈ Γᵈ}
+        → e₁ ∈ᵀ tr
+        → EmbedInto (recInst x tr) e
+        ----------------------------
+        → EmbedInto e₁ e
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -164,22 +144,47 @@ d-ctx-ext-lookup-r : d ∈ Γᵈ → (Γᵈ' : DataCtx) → d ∈ (Γᵈ ++ Γ�
 d-ctx-ext-lookup-r here Γᵈ'      = here
 d-ctx-ext-lookup-r (there x) Γᵈ' = there (d-ctx-ext-lookup-r x Γᵈ')
 
+d-ctx-ext-lookup-tr : {e : Γ , Γᵈ ⊢ t} {tr : TypeResolver Γ Γᵈ ts} → e ∈ᵀ tr → d ∈ (ref-tuples-to-decls e) → d ∈ (ref-tuples-to-decls-tr tr)
+d-ctx-ext-lookup-tr (here {tr = tr})    ψ = d-ctx-ext-lookup-r ψ (ref-tuples-to-decls-tr tr)
+d-ctx-ext-lookup-tr (there {e₂ = e₂} x) ψ = d-ctx-ext-lookup-l (d-ctx-ext-lookup-tr x ψ) (ref-tuples-to-decls e₂)
+
 ref-t-lookup : {e : Γ , Γᵈ ⊢ t} {e' : Γ' , Γᵈ ⊢ t'} → d ∈ (ref-tuples-to-decls e) → EmbedInto e e' → d ∈ (ref-tuples-to-decls e')
 ref-t-lookup x (e-root _)             = x
 ref-t-lookup x (e-func ev)            = ref-t-lookup x ev
 ref-t-lookup x (e-app-l {e₁ = e₁} ev) = ref-t-lookup (d-ctx-ext-lookup-r x (ref-tuples-to-decls e₁)) ev
 ref-t-lookup x (e-app-r {e₂ = e₂} ev) = ref-t-lookup (d-ctx-ext-lookup-l x (ref-tuples-to-decls e₂)) ev
+ref-t-lookup x (e-tup-e ψ ev)         = ref-t-lookup (there (d-ctx-ext-lookup-tr ψ x)) ev
+ref-t-lookup x (e-rec-e ψ ev)         = ref-t-lookup (d-ctx-ext-lookup-tr ψ x) ev
+
+ref-tr-lookup : {e : Γ , Γᵈ ⊢ t} {tr₁ : TypeResolver Γ Γᵈ ts₁} {tr₂ : TypeResolver Γ Γᵈ ts₂} → e ∈ᵀ tr₁ → EmbedIntoTR tr₁ tr₂ → e ∈ᵀ tr₂
+ref-tr-lookup x (tr-root _) = x
+ref-tr-lookup x (tr-el tev) = ref-tr-lookup (there x) tev
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
 ref-h : {e' : Γ' , Γᵈ ⊢ t'} → (e : Γ , Γᵈ ⊢ t) → EmbedInto e e' → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e') ++ Γᵈ) ⊢ ref-type t
+
+ref-tr-tup : {e' : Γ' , Γᵈ ⊢ t'} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (tuple tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
+ref-tr-tup {Γᵈ = Γᵈ} {Γ = Γ} {e' = e'} tr ev = ref-tr-tup-h tr (tr-root tr)
+    where
+        ref-tr-tup-h : (tr₁ : TypeResolver Γ Γᵈ ts) → EmbedIntoTR tr₁ tr → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
+        ref-tr-tup-h []ᵀ      tev = []ᵀ
+        ref-tr-tup-h (e ∷ tr) tev = (ref-h e (e-tup-e (ref-tr-lookup here tev) ev)) ∷ (ref-tr-tup-h tr (tr-el tev))
+
+ref-tr-rec : {e' : Γ' , Γᵈ ⊢ t'} {x : recDecl ts ∈ Γᵈ} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (recInst x tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
+ref-tr-rec {Γᵈ = Γᵈ} {Γ = Γ} {e' = e'} tr ev = ref-tr-rec-h tr (tr-root tr)
+    where
+        ref-tr-rec-h : (tr₁ : TypeResolver Γ Γᵈ ts) → EmbedIntoTR tr₁ tr → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
+        ref-tr-rec-h []ᵀ      tev = []ᵀ
+        ref-tr-rec-h (e ∷ tr) tev = (ref-h e (e-rec-e (ref-tr-lookup here tev) ev)) ∷ (ref-tr-rec-h tr (tr-el tev))
+
 ref-h                     (num n)        ev = num n
 ref-h                     (char c)       ev = char c
 ref-h                     (var x)        ev = var (ref-ctx-lookup x)
 ref-h                     (fun b)        ev = fun (ref-h b (e-func ev))
 ref-h                     (f ∙ a)        ev = (ref-h f (e-app-l ev)) ∙ (ref-h a (e-app-r ev))
-ref-h {Γᵈ = Γᵈ} {e' = e'} (tuple tr)     ev = recInst (ref-d-ctx-lookup (d-ctx-ext-lookup-r (ref-t-lookup here ev) Γᵈ)) {!   !}
-ref-h {e' = e'}           (recInst x tr) ev = recInst (ref-d-ctx-ext-lookup x (ref-tuples-to-decls e')) {!   !}
+ref-h {Γᵈ = Γᵈ} {e' = e'} (tuple tr)     ev = recInst (ref-d-ctx-lookup (d-ctx-ext-lookup-r (ref-t-lookup here ev) Γᵈ)) (ref-tr-tup tr ev)
+ref-h {e' = e'}           (recInst x tr) ev = recInst (ref-d-ctx-ext-lookup x (ref-tuples-to-decls e')) (ref-tr-rec tr ev)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -187,4 +192,4 @@ ref : (e : Γ , Γᵈ ⊢ t) → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e)
 ref e = ref-h e (e-root e)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
- 
+      
