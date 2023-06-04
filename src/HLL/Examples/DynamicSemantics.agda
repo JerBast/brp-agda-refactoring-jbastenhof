@@ -13,7 +13,7 @@ open import HLL.HLL
 open import HLL.Types
 open import HLL.Values
 open import HLL.Context
-open import HLL.DataContext
+open import HLL.DataContext using (DataCtx)
 open import HLL.DynamicSemantics
 
 open import Utils.Element
