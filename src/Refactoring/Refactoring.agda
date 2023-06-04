@@ -14,6 +14,8 @@ open import HLL.DataContext using (DataCtx)
 
 open import Utils.Element
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 private
     variable
         t t'   : Type
@@ -26,10 +28,14 @@ private
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+{- Extracts the resolved type list from a type resolver. -}
+
 tr-to-type-list : TypeResolver Γ Γᵈ ts → List Type
 tr-to-type-list {ts = ts} _ = ts
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+{- Utility functions for refactoring types in contexts. Replaces tuple types with record types. -}
 
 ref-type : Type → Type
 
@@ -69,6 +75,8 @@ ref-d-ctx-ext-lookup x (_ ∷ Γᵈ') = there (ref-d-ctx-ext-lookup x Γᵈ')
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+{- Utility functions for constructing new record declarations from existing tuples. Uses pre-order traversal. -}
+
 ref-tuples-to-decls : (e : Γ , Γᵈ ⊢ t) → List Decl
 
 ref-tuples-to-decls-tr : (tr : TypeResolver Γ Γᵈ ts) → List Decl
@@ -84,6 +92,8 @@ ref-tuples-to-decls (tuple tr)     = (recDecl (tr-to-type-list tr)) ∷ (ref-tup
 ref-tuples-to-decls (recInst x tr) = ref-tuples-to-decls-tr tr
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+{- Lookback constructs that allow backwards traversal to the root of an expression. -}
 
 private
     variable
@@ -136,6 +146,8 @@ data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+{- Functions for extending domains in existing lookups. Support for flat extensions as well as backwards extensions in tree-like expressions. -}
+
 d-ctx-ext-lookup-l : d ∈ Γᵈ → (Γᵈ' : DataCtx) → d ∈ (Γᵈ' ++ Γᵈ)
 d-ctx-ext-lookup-l x []        = x
 d-ctx-ext-lookup-l x (_ ∷ Γᵈ') = there (d-ctx-ext-lookup-l x Γᵈ')
@@ -162,6 +174,8 @@ ref-tr-lookup x (tr-el tev) = ref-tr-lookup (there x) tev
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+{- Helper functions for refactoring expressions using lookback evidence. -}
+
 ref-h : {e' : Γ' , Γᵈ ⊢ t'} → (e : Γ , Γᵈ ⊢ t) → EmbedInto e e' → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e') ++ Γᵈ) ⊢ ref-type t
 
 ref-tr-tup : {e' : Γ' , Γᵈ ⊢ t'} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (tuple tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
@@ -187,6 +201,8 @@ ref-h {Γᵈ = Γᵈ} {e' = e'} (tuple tr)     ev = recInst (ref-d-ctx-lookup (d
 ref-h {e' = e'}           (recInst x tr) ev = recInst (ref-d-ctx-ext-lookup x (ref-tuples-to-decls e')) (ref-tr-rec tr ev)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
+
+{- The core refactoring operation that replaces tuples with records for arbitrary expressions. -}
 
 ref : (e : Γ , Γᵈ ⊢ t) → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e) ++ Γᵈ) ⊢ ref-type t
 ref e = ref-h e (e-root e)
