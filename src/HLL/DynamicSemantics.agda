@@ -2,13 +2,16 @@ module HLL.DynamicSemantics where
 
 open import Agda.Builtin.Char
 open import Agda.Builtin.List
+open import Agda.Builtin.Equality
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
+
+open import Data.Fin.Base using (toℕ)
 
 open import HLL.HLL
 open import HLL.Types
 open import HLL.Values
-open import HLL.Context
-open import HLL.DataContext
+open import HLL.Context using (Ctx)
+open import HLL.DataContext using (DataCtx)
 
 open import Utils.Element
 
@@ -38,7 +41,7 @@ data ReductionResolver (γ : Env Γ) (Γᵈ : DataCtx) : TypeResolver Γ Γᵈ t
 data _,_⊢_↓_ where
     ↓num  : ∀ {n}       → γ , Γᵈ ⊢ num n ↓ num n
     ↓char : ∀ {c}       → γ , Γᵈ ⊢ char c ↓ char c
-    ↓var  : (x : t ∈ Γ) → γ , Γᵈ ⊢ var x ↓ γ x
+    ↓var  : {x : t ∈ Γ} → γ , Γᵈ ⊢ var x ↓ γ x
     ↓fun  : {b : t ∷ Γ , Γᵈ ⊢ u}
         ---------------------------
         → γ , Γᵈ ⊢ fun b ↓ clos b γ
@@ -55,9 +58,20 @@ data _,_⊢_↓_ where
         ------------------------------
         → γ , Γᵈ ⊢ tuple tr ↓ tuple vs
     
+    ↓tLookup : {e : Γ , Γᵈ ⊢ tupleT ts} {x : t ∈ ts} {y : v ∈ vs}
+        → γ , Γᵈ ⊢ e ↓ tuple vs
+        → toℕ (index x) ≡ toℕ (index y)
+        -------------------------------
+        → γ , Γᵈ ⊢ (tLookup e x) ↓ v
+    
     -- Record
-    ↓recInst : {tr : TypeResolver Γ Γᵈ ts}
-        → (x : (recDecl ts) ∈ Γᵈ)
+    ↓recInst : {tr : TypeResolver Γ Γᵈ ts} {x : (recDecl ts) ∈ Γᵈ}
         → ReductionResolver γ Γᵈ tr vs
         --------------------------------
         → γ , Γᵈ ⊢ recInst x tr ↓ rec vs
+
+    ↓rLookup : {e : Γ , Γᵈ ⊢ recT ts} {x : t ∈ ts} {y : v ∈ vs}
+        → γ , Γᵈ ⊢ e ↓ rec vs
+        → toℕ (index x) ≡ toℕ (index y)
+        -------------------------------
+        → γ , Γᵈ ⊢ (rLookup e x) ↓ v

@@ -45,10 +45,13 @@ ref-type-list (t ∷ ts) = (ref-type t) ∷ (ref-type-list ts)
 
 ref-type numT        = numT
 ref-type charT       = charT
-ref-type unitT       = unitT
 ref-type (t ⇒ u)     = (ref-type t) ⇒ (ref-type u)
 ref-type (tupleT ts) = recT (ref-type-list ts)
 ref-type (recT ts)   = recT (ref-type-list ts)
+
+ref-type-list-lookup : t ∈ ts → (ref-type t) ∈ (ref-type-list ts)
+ref-type-list-lookup here      = here
+ref-type-list-lookup (there x) = there (ref-type-list-lookup x)
 
 ref-ctx : Ctx → Ctx
 ref-ctx []      = []
@@ -89,7 +92,9 @@ ref-tuples-to-decls (var x)        = []
 ref-tuples-to-decls (fun b)        = ref-tuples-to-decls b
 ref-tuples-to-decls (f ∙ a)        = (ref-tuples-to-decls f) ++ (ref-tuples-to-decls a)
 ref-tuples-to-decls (tuple tr)     = (recDecl (tr-to-type-list tr)) ∷ (ref-tuples-to-decls-tr tr)
+ref-tuples-to-decls (tLookup e x)  = ref-tuples-to-decls e
 ref-tuples-to-decls (recInst x tr) = ref-tuples-to-decls-tr tr
+ref-tuples-to-decls (rLookup e x)  = ref-tuples-to-decls e
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -138,9 +143,19 @@ data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
         ------------------------
         → EmbedInto e₁ e
     
+    e-tup-l : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ tupleT ts} {x : t₁ ∈ ts}
+        → EmbedInto (tLookup e₁ x) e
+        ----------------------------
+        → EmbedInto e₁ e
+    
     e-rec-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts₁} {x : (recDecl ts₁) ∈ Γᵈ}
         → e₁ ∈ᵀ tr
         → EmbedInto (recInst x tr) e
+        ----------------------------
+        → EmbedInto e₁ e
+    
+    e-rec-l : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ recT ts} {x : t₁ ∈ ts}
+        → EmbedInto (rLookup e₁ x) e
         ----------------------------
         → EmbedInto e₁ e
 
@@ -166,7 +181,9 @@ ref-t-lookup x (e-func ev)            = ref-t-lookup x ev
 ref-t-lookup x (e-app-l {e₁ = e₁} ev) = ref-t-lookup (d-ctx-ext-lookup-r x (ref-tuples-to-decls e₁)) ev
 ref-t-lookup x (e-app-r {e₂ = e₂} ev) = ref-t-lookup (d-ctx-ext-lookup-l x (ref-tuples-to-decls e₂)) ev
 ref-t-lookup x (e-tup-e ψ ev)         = ref-t-lookup (there (d-ctx-ext-lookup-tr ψ x)) ev
+ref-t-lookup x (e-tup-l ev)           = ref-t-lookup x ev
 ref-t-lookup x (e-rec-e ψ ev)         = ref-t-lookup (d-ctx-ext-lookup-tr ψ x) ev
+ref-t-lookup x (e-rec-l ev)           = ref-t-lookup x ev
 
 ref-tr-lookup : {e : Γ , Γᵈ ⊢ t} {tr₁ : TypeResolver Γ Γᵈ ts₁} {tr₂ : TypeResolver Γ Γᵈ ts₂} → e ∈ᵀ tr₁ → EmbedIntoTR tr₁ tr₂ → e ∈ᵀ tr₂
 ref-tr-lookup x (tr-root _) = x
@@ -198,7 +215,9 @@ ref-h                     (var x)        ev = var (ref-ctx-lookup x)
 ref-h                     (fun b)        ev = fun (ref-h b (e-func ev))
 ref-h                     (f ∙ a)        ev = (ref-h f (e-app-l ev)) ∙ (ref-h a (e-app-r ev))
 ref-h {Γᵈ = Γᵈ} {e' = e'} (tuple tr)     ev = recInst (ref-d-ctx-lookup (d-ctx-ext-lookup-r (ref-t-lookup here ev) Γᵈ)) (ref-tr-tup tr ev)
+ref-h                     (tLookup e x)  ev = rLookup (ref-h e (e-tup-l ev)) (ref-type-list-lookup x)
 ref-h {e' = e'}           (recInst x tr) ev = recInst (ref-d-ctx-ext-lookup x (ref-tuples-to-decls e')) (ref-tr-rec tr ev)
+ref-h                     (rLookup e x)  ev = rLookup (ref-h e (e-rec-l ev)) (ref-type-list-lookup x)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 

@@ -24,7 +24,6 @@ Env : Ctx → Set
 
 -- Allowed values within the HLL
 data Value : Set where
-    unit  : Value
     num   : ℕ → Value
     char  : Char → Value
     clos  : t ∷ Γ , Γᵈ ⊢ u → Env Γ → Value
