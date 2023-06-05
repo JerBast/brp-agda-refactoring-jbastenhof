@@ -8,9 +8,11 @@ open import Agda.Builtin.Char
 open import Agda.Builtin.List
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
+open import Data.List.Base using (length)
+
 open import HLL.Types
-open import HLL.Context
-open import HLL.DataContext
+open import HLL.Context using (Ctx)
+open import HLL.DataContext using (DataCtx)
 
 open import Utils.Element
 
@@ -56,9 +58,20 @@ data _,_⊢_ where
     tuple : TypeResolver Γ Γᵈ ts
         ------------------------
         → Γ , Γᵈ ⊢ tupleT ts
+    
+    tLookup : Γ , Γᵈ ⊢ tupleT ts
+        → t ∈ ts
+        ------------------------
+        → Γ , Γᵈ ⊢ t
 
     -- Record
     recInst : (recDecl ts) ∈ Γᵈ
         → TypeResolver Γ Γᵈ ts
         -----------------------
         → Γ , Γᵈ ⊢ recT ts
+    
+    rLookup : Γ , Γᵈ ⊢ recT ts
+        → t ∈ ts
+        ----------------------
+        → Γ , Γᵈ ⊢ t
+ 
