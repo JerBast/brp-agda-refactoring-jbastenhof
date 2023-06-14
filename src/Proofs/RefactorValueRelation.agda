@@ -53,8 +53,8 @@ _⟶ᴾⱽ_ : PolyList ts → PolyList (ref-type-list ts) → Set
 num n₁                          ⟶ⱽ num n₂                       = n₁ ≡ n₂
 char c₁                         ⟶ⱽ char c₂                      = c₁ ≡ c₂
 clos {t} {_} {Γᵈ} {u = u} b₁ γ₁ ⟶ⱽ clos {_} {_} {Γᵈ₁} {_} b₂ γ₂ = {vᵀ₁ : Value t} {vᵁ₁ : Value u} {vᵀ₂ : Value (ref-type t)} {vᵁ₂ : Value (ref-type u)} {vᵀ₁⟶vᵀ₂ : vᵀ₁ ⟶ⱽ vᵀ₂}
-    → (vᵀ₁ ∷ γ₁) , Γᵈ  ⊢ b₁ ↓ vᵁ₁
-    → (vᵀ₂ ∷ γ₂) , Γᵈ₁ ⊢ b₂ ↓ vᵁ₂
+    → (vᵀ₁ ∷ γ₁) , Γᵈ  ⊢ b₁ ⇓ vᵁ₁
+    → (vᵀ₂ ∷ γ₂) , Γᵈ₁ ⊢ b₂ ⇓ vᵁ₂
     → vᵁ₁ ⟶ⱽ vᵁ₂
 tuple vs₁                       ⟶ⱽ rec vs₂                      = vs₁ ⟶ᴾⱽ vs₂
 rec vs₁                         ⟶ⱽ rec vs₂                      = vs₁ ⟶ᴾⱽ vs₂
@@ -79,8 +79,8 @@ ref-lookup-pl {x = there x} {v₁ ∷ pl₁} {v₂ ∷ pl₂} r = ref-lookup-pl 
 
 proof-h : {γ₁ : Env Γ} {γ₂ : Env (ref-ctx Γ)} {e : Γ , Γᵈ ⊢ t} {e' : Γ' , Γᵈ ⊢ t'}
     → (ev : EmbedInto e e')
-    → γ₁ , Γᵈ                                       ⊢ e          ↓ v₁
-    → γ₂ , ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ) ⊢ ref-h e ev ↓ v₂
+    → γ₁ , Γᵈ                                       ⊢ e          ⇓ v₁
+    → γ₂ , ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ) ⊢ ref-h e ev ⇓ v₂
     → γ₁ ⟶ᴱ γ₂
     → v₁ ⟶ⱽ v₂
 
@@ -108,19 +108,19 @@ proof-h-rr-rec {Γ} {Γᵈ = Γᵈ} {e' = e'} {tr₁ = tr₁} ev rr₁ rr₂ γ 
         proof-h-rr-tup-h tev []ᴿ        []ᴿ        γ = tt
         proof-h-rr-tup-h tev (e₁ ∷ rr₁) (e₂ ∷ rr₂) γ = proof-h (e-rec-e (ref-tr-lookup here tev) ev) e₁ e₂ γ , proof-h-rr-tup-h (tr-el tev) rr₁ rr₂ γ
 
-proof-h ev ↓num            ↓num            _                             = refl
-proof-h ev ↓char           ↓char           _                             = refl
-proof-h ev ↓var            ↓var            γ                             = ref-lookup-v γ
-proof-h ev ↓fun ↓fun                       γ {vᵀ₁⟶vᵀ₂ = vᵀ₁⟶vᵀ₂} e₁ e₂ = proof-h (e-func ev) e₁ e₂ (vᵀ₁⟶vᵀ₂ , γ)
-proof-h ev (↓app f₁ b₁ a₁) (↓app f₂ b₂ a₂) γ                             = (proof-h (e-app-l ev) f₁ f₂ γ) {vᵀ₁⟶vᵀ₂ = proof-h (e-app-r ev) a₁ a₂ γ} b₁ b₂
-proof-h ev (↓tuple rr₁)    (↓recInst rr₂)  γ                             = proof-h-rr-tup ev rr₁ rr₂ γ
-proof-h ev (↓tLookup e₁)   (↓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-tup-l ev) e₁ e₂ γ)
-proof-h ev (↓recInst rr₁)  (↓recInst rr₂)  γ                             = proof-h-rr-rec ev rr₁ rr₂ γ
-proof-h ev (↓rLookup e₁)   (↓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-rec-l ev) e₁ e₂ γ)
+proof-h ev ⇓num            ⇓num            _                             = refl
+proof-h ev ⇓char           ⇓char           _                             = refl
+proof-h ev ⇓var            ⇓var            γ                             = ref-lookup-v γ
+proof-h ev ⇓fun ⇓fun                       γ {vᵀ₁⟶vᵀ₂ = vᵀ₁⟶vᵀ₂} e₁ e₂ = proof-h (e-func ev) e₁ e₂ (vᵀ₁⟶vᵀ₂ , γ)
+proof-h ev (⇓app f₁ b₁ a₁) (⇓app f₂ b₂ a₂) γ                             = (proof-h (e-app-l ev) f₁ f₂ γ) {vᵀ₁⟶vᵀ₂ = proof-h (e-app-r ev) a₁ a₂ γ} b₁ b₂
+proof-h ev (⇓tuple rr₁)    (⇓recInst rr₂)  γ                             = proof-h-rr-tup ev rr₁ rr₂ γ
+proof-h ev (⇓tLookup e₁)   (⇓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-tup-l ev) e₁ e₂ γ)
+proof-h ev (⇓recInst rr₁)  (⇓recInst rr₂)  γ                             = proof-h-rr-rec ev rr₁ rr₂ γ
+proof-h ev (⇓rLookup e₁)   (⇓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-rec-l ev) e₁ e₂ γ)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-proof : {e : [] , Γᵈ ⊢ t} → [] , Γᵈ ⊢ e ↓ v₁ → [] , ref-d-ctx (ref-tuples-to-decls e ++ Γᵈ) ⊢ ref e ↓ v₂ → v₁ ⟶ⱽ v₂
+proof : {e : [] , Γᵈ ⊢ t} → [] , Γᵈ ⊢ e ⇓ v₁ → [] , ref-d-ctx (ref-tuples-to-decls e ++ Γᵈ) ⊢ ref e ⇓ v₂ → v₁ ⟶ⱽ v₂
 proof {e = e} e₁ e₂ = proof-h (e-root e) e₁ e₂ tt
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -128,11 +128,11 @@ proof {e = e} e₁ e₂ = proof-h (e-root e) e₁ e₂ tt
 ex₁-e : [] , [] ⊢ numT
 ex₁-e = num 42
 
-ex₁-v₁ : [] , [] ⊢ ex₁-e ↓ num 42
-ex₁-v₁ = ↓num
+ex₁-v₁ : [] , [] ⊢ ex₁-e ⇓ num 42
+ex₁-v₁ = ⇓num
 
-ex₁-v₂ : [] , [] ⊢ ref ex₁-e ↓ num 42
-ex₁-v₂ = ↓num
+ex₁-v₂ : [] , [] ⊢ ref ex₁-e ⇓ num 42
+ex₁-v₂ = ⇓num
 
 ex₁ : num 42 ⟶ⱽ num 42
 ex₁ = proof ex₁-v₁ ex₁-v₂
@@ -142,11 +142,11 @@ ex₁ = proof ex₁-v₁ ex₁-v₂
 ex₂-e : [] , [] ⊢ tupleT (numT ∷ charT ∷ [])
 ex₂-e = tuple (num 42 ∷ char 'J' ∷ []ᵀ)
 
-ex₂-v₁ : [] , [] ⊢ ex₂-e ↓ tuple (num 42 ∷ char 'J' ∷ [])
-ex₂-v₁ = ↓tuple (↓num ∷ ↓char ∷ []ᴿ)
+ex₂-v₁ : [] , [] ⊢ ex₂-e ⇓ tuple (num 42 ∷ char 'J' ∷ [])
+ex₂-v₁ = ⇓tuple (⇓num ∷ ⇓char ∷ []ᴿ)
 
-ex₂-v₂ : [] , recDecl (numT ∷ charT ∷ []) ∷ [] ⊢ ref ex₂-e ↓ rec (num 42 ∷ char 'J' ∷ [])
-ex₂-v₂ = ↓recInst (↓num ∷ ↓char ∷ []ᴿ)
+ex₂-v₂ : [] , recDecl (numT ∷ charT ∷ []) ∷ [] ⊢ ref ex₂-e ⇓ rec (num 42 ∷ char 'J' ∷ [])
+ex₂-v₂ = ⇓recInst (⇓num ∷ ⇓char ∷ []ᴿ)
 
 ex₂ : tuple (num 42 ∷ char 'J' ∷ []) ⟶ⱽ rec (num 42 ∷ char 'J' ∷ [])
 ex₂ = proof ex₂-v₁ ex₂-v₂
