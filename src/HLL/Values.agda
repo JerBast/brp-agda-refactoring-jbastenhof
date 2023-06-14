@@ -18,27 +18,22 @@ private
         Γᵈ : DataCtx
 
         t u : Type
+        ts : List Type
 
--- Declaration of the environment
-Env : Ctx → Set
+data Value : Type → Set
+
+data Env : Ctx → Set where
+    []  : Env []
+    _∷_ : (v : Value t) → Env Γ → Env (t ∷ Γ)
+
+data PolyList : List Type → Set where
+    []  : PolyList []
+    _∷_ : Value t → PolyList ts → PolyList (t ∷ ts)
 
 -- Allowed values within the HLL
-data Value : Set where
-    num   : ℕ → Value
-    char  : Char → Value
-    clos  : t ∷ Γ , Γᵈ ⊢ u → Env Γ → Value
-    tuple : List Value → Value
-    rec   : List Value → Value
-
--- Definition of the environment
-Env Γ = {t : Type} → t ∈ Γ → Value
-
--- Definitions to support extending the environment
-‵[] : Env []
-‵[] ()
-
-infixr 5 _‵∷_
-
-_‵∷_ : ∀ {Γ t} → Value → Env Γ → Env (t ∷ Γ)
-(v ‵∷ γ) here      = v
-(v ‵∷ γ) (there x) = γ x
+data Value where
+    num   : ℕ                      → Value numT
+    char  : Char                   → Value charT
+    clos  : t ∷ Γ , Γᵈ ⊢ u → Env Γ → Value (t ⇒ u)
+    tuple : PolyList ts            → Value (tupleT ts)
+    rec   : PolyList ts            → Value (recT ts)
