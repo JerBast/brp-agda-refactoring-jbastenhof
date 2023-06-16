@@ -3,6 +3,8 @@ module HLL.Types where
 
 open import Agda.Builtin.List
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 infixr 5 _⇒_
 
 -- Allowed types within the HLL
@@ -16,3 +18,5 @@ data Type : Set where
 -- Allowed declarations within the HLL
 data Decl : Set where
     recDecl : List Type → Decl
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------

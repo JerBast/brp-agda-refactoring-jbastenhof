@@ -12,6 +12,8 @@ open import HLL.DynamicSemantics
 
 open import Utils.Element
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 -- Examples
 ex1 : [] , [] ⊢ num 42 ⇓ num 42
 ex1 = ⇓num
@@ -33,3 +35,5 @@ ex6 = ⇓tLookup (⇓tuple (⇓char ∷ ⇓num ∷ ⇓num ∷ []ᴿ))
 
 ex7 : [] , recDecl (charT ∷ numT ∷ numT ∷ []) ∷ [] ⊢ rLookup (recInst here (char 'Z' ∷ num 10 ∷ num 10 ∷ []ᵀ)) (there (there here)) ⇓ num 10
 ex7 = ⇓rLookup (⇓recInst (⇓char ∷ ⇓num ∷ ⇓num ∷ []ᴿ))
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------

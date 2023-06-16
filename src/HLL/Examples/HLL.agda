@@ -10,6 +10,8 @@ open import HLL.DataContext
 
 open import Utils.Element
 
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 -- Examples
 ex1 : [] , [] ⊢ tupleT (numT ∷ numT ∷ [])
 ex1 = tuple (num 42 ∷ num 1337 ∷ []ᵀ)
@@ -34,3 +36,5 @@ ex7 = tLookup (tuple (char 'A' ∷ num 42 ∷ []ᵀ)) (there here)
 
 ex8 : [] , recDecl (numT ∷ charT ∷ charT ∷ []) ∷ [] ⊢ numT
 ex8 = rLookup (recInst here (num 42 ∷ char 'A' ∷ char 'B' ∷ []ᵀ)) here
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
