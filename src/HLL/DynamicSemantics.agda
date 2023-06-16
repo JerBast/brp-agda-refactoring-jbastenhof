@@ -30,14 +30,17 @@ infix  3 _,_⊢_⇓_
 
 data _,_⊢_⇓_ : Env Γ → (Γᵈ : DataCtx) → (Γ , Γᵈ ⊢ t) → Value t → Set
 
+-- Accumulate evidence for all elements of a TypeResolver instance
 data ReductionResolver (γ : Env Γ) (Γᵈ : DataCtx) : TypeResolver Γ Γᵈ ts → PolyList ts → Set where
     []ᴿ : ReductionResolver γ Γᵈ []ᵀ []
     _∷_ : {e : Γ , Γᵈ ⊢ t} → (γ , Γᵈ ⊢ e ⇓ v) → ReductionResolver γ Γᵈ tr vs → ReductionResolver γ Γᵈ (e ∷ tr) (v ∷ vs)
 
+-- Find the appropriate value for a type lookup in the type context
 value-lookup : Env Γ → t ∈ Γ → Value t
 value-lookup (v ∷ vs) here      = v
 value-lookup (v ∷ vs) (there x) = value-lookup vs x
 
+-- Find the appropriate value for a type lookup in a variadic list
 poly-list-lookup : PolyList ts → t ∈ ts → Value t
 poly-list-lookup (v ∷ vs) here      = v
 poly-list-lookup (v ∷ vs) (there x) = poly-list-lookup vs x

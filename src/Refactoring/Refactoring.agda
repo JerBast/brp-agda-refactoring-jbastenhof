@@ -26,17 +26,16 @@ private
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- Extracts the resolved type list from a type resolver. -}
-
+-- Extracts the resolved type list from a type resolver
 tr-to-type-list : TypeResolver Γ Γᵈ ts → List Type
 tr-to-type-list {ts = ts} _ = ts
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- Utility functions for refactoring types in contexts. Replaces tuple types with record types. -}
-
+-- Refactor one type to another
 ref-type : Type → Type
 
+-- Refactor all types within a list of types
 ref-type-list : List Type → List Type
 ref-type-list []       = []
 ref-type-list (t ∷ ts) = (ref-type t) ∷ (ref-type-list ts)
@@ -47,39 +46,49 @@ ref-type (t ⇒ u)     = (ref-type t) ⇒ (ref-type u)
 ref-type (tupleT ts) = recT (ref-type-list ts)
 ref-type (recT ts)   = recT (ref-type-list ts)
 
+-- Refactor a lookup for a type within a type list to a refactored type
+-- in a refactored type list
 ref-type-list-lookup : t ∈ ts → (ref-type t) ∈ (ref-type-list ts)
 ref-type-list-lookup here      = here
 ref-type-list-lookup (there x) = there (ref-type-list-lookup x)
 
+-- Refactor all types within the type context
 ref-ctx : Ctx → Ctx
-ref-ctx []      = []
-ref-ctx (t ∷ c) = (ref-type t) ∷ (ref-ctx c)
+ref-ctx = ref-type-list
 
+-- Refactor a lookup for a type within the type context to a refactored
+-- type in a refactored context
 ref-ctx-lookup : t ∈ Γ → (ref-type t) ∈ (ref-ctx Γ)
-ref-ctx-lookup here      = here
-ref-ctx-lookup (there x) = there (ref-ctx-lookup x)
+ref-ctx-lookup = ref-type-list-lookup
 
+-- Refactor all declarations
 ref-decl : Decl → Decl
 ref-decl (recDecl ts) = recDecl (ref-type-list ts)
 
+-- Refactor all declarations within a declaration context
 ref-d-ctx : DataCtx → DataCtx
 ref-d-ctx []       = []
 ref-d-ctx (d ∷ ds) = (ref-decl d) ∷ (ref-d-ctx ds)
 
+-- Refactor a lookup for a declaration in a declaration context to a lookup
+-- for a refactored declaration in a refactored context
 ref-d-ctx-lookup : d ∈ Γᵈ → (ref-decl d) ∈ (ref-d-ctx Γᵈ)
 ref-d-ctx-lookup here      = here
 ref-d-ctx-lookup (there x) = there (ref-d-ctx-lookup x)
 
+-- Refactor a lookup for a declaration in a declaration context to a lookup
+-- for a refactored declaration in an extended refactored context.
+-- Note: new declarations are prepended.
 ref-d-ctx-ext-lookup : d ∈ Γᵈ → (Γᵈ' : DataCtx) → (ref-decl d) ∈ (ref-d-ctx (Γᵈ' ++ Γᵈ))
 ref-d-ctx-ext-lookup x []        = ref-d-ctx-lookup x
 ref-d-ctx-ext-lookup x (_ ∷ Γᵈ') = there (ref-d-ctx-ext-lookup x Γᵈ')
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- Utility functions for constructing new record declarations from existing tuples. Uses pre-order traversal. -}
-
+-- Construct a list of new declarations for all tuples within an expression (postorder traversal)
 ref-tuples-to-decls : (e : Γ , Γᵈ ⊢ t) → List Decl
 
+-- Construct a list of new declarations for all tuples within a sequence of expressions
 ref-tuples-to-decls-tr : (tr : TypeResolver Γ Γᵈ ts) → List Decl
 ref-tuples-to-decls-tr []ᵀ      = []
 ref-tuples-to-decls-tr (e ∷ tr) = (ref-tuples-to-decls e) ++ (ref-tuples-to-decls-tr tr)
@@ -96,15 +105,14 @@ ref-tuples-to-decls (rLookup e x)  = ref-tuples-to-decls e
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- Lookback constructs that allow backwards traversal to the root of an expression. -}
-
 private
     variable
-        Γ₁ Γ₂ Γ₃ Γ₄ : Ctx
+        Γ₁ Γ₂ : Ctx
         
-        t₁ t₂ t₃ t₄ : Type
-        ts₁ ts₂     : List Type
+        t₁ t₂ t₃ : Type
+        ts₁ ts₂  : List Type
 
+-- Lookback evidence for the position of an expression within a sequence of expressions
 data EmbedIntoTR : TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ ts' → Set where
     tr-root : (tr : TypeResolver Γ Γᵈ ts)
         ---------------------------------
@@ -115,6 +123,7 @@ data EmbedIntoTR : TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ ts' → Se
         ---------------------------
         → EmbedIntoTR tr₁ tr₂
 
+-- Lookback evidence for an expression embedded into a larger expression
 data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
     e-root : (e : Γ , Γᵈ ⊢ t)
         ---------------------
@@ -159,20 +168,23 @@ data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- Functions for extending domains in existing lookups. Support for flat extensions as well as backwards extensions in tree-like expressions. -}
-
+-- Update declaration lookup after preprending new elements to the declaration context
 d-ctx-ext-lookup-l : d ∈ Γᵈ → (Γᵈ' : DataCtx) → d ∈ (Γᵈ' ++ Γᵈ)
 d-ctx-ext-lookup-l x []        = x
 d-ctx-ext-lookup-l x (_ ∷ Γᵈ') = there (d-ctx-ext-lookup-l x Γᵈ')
 
+-- Update declaration lookup after appending new elements to the declaration context
 d-ctx-ext-lookup-r : d ∈ Γᵈ → (Γᵈ' : DataCtx) → d ∈ (Γᵈ ++ Γᵈ')
 d-ctx-ext-lookup-r here Γᵈ'      = here
 d-ctx-ext-lookup-r (there x) Γᵈ' = there (d-ctx-ext-lookup-r x Γᵈ')
 
+-- Update declaration lookup after appending and prepending new elements to the declaration context
 d-ctx-ext-lookup-tr : {e : Γ , Γᵈ ⊢ t} {tr : TypeResolver Γ Γᵈ ts} → e ∈ᵀ tr → d ∈ (ref-tuples-to-decls e) → d ∈ (ref-tuples-to-decls-tr tr)
 d-ctx-ext-lookup-tr (here {tr = tr})    ψ = d-ctx-ext-lookup-r ψ (ref-tuples-to-decls-tr tr)
 d-ctx-ext-lookup-tr (there {e₂ = e₂} x) ψ = d-ctx-ext-lookup-l (d-ctx-ext-lookup-tr x ψ) (ref-tuples-to-decls e₂)
 
+-- Update declaration lookup in a step-by-step manner. Each step we ascend a level and update the lookup for that level until
+-- we reach the root of an expression
 ref-t-lookup : {e : Γ , Γᵈ ⊢ t} {e' : Γ' , Γᵈ ⊢ t'} → d ∈ (ref-tuples-to-decls e) → EmbedInto e e' → d ∈ (ref-tuples-to-decls e')
 ref-t-lookup x (e-root _)             = x
 ref-t-lookup x (e-func ev)            = ref-t-lookup x ev
@@ -183,41 +195,31 @@ ref-t-lookup x (e-tup-l ev)           = ref-t-lookup x ev
 ref-t-lookup x (e-rec-e ψ ev)         = ref-t-lookup (d-ctx-ext-lookup-tr ψ x) ev
 ref-t-lookup x (e-rec-l ev)           = ref-t-lookup x ev
 
+-- Update positional lookup in expression sequence from a local point to a centralized point (root of sequence)
 ref-tr-lookup : {e : Γ , Γᵈ ⊢ t} {tr₁ : TypeResolver Γ Γᵈ ts₁} {tr₂ : TypeResolver Γ Γᵈ ts₂} → e ∈ᵀ tr₁ → EmbedIntoTR tr₁ tr₂ → e ∈ᵀ tr₂
 ref-tr-lookup x (tr-root _) = x
 ref-tr-lookup x (tr-el tev) = ref-tr-lookup (there x) tev
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- Helper functions for refactoring expressions using lookback evidence. -}
-
+-- Helper function for refactoring an expression given lookback evidence
 ref-h : {e' : Γ' , Γᵈ ⊢ t'} → (e : Γ , Γᵈ ⊢ t) → EmbedInto e e' → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e') ++ Γᵈ) ⊢ ref-type t
 
--- ref-tr-tup : {e' : Γ' , Γᵈ ⊢ t'} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (tuple tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
--- ref-tr-tup {Γᵈ = Γᵈ} {Γ = Γ} {e' = e'} tr ev = ref-tr-tup-h tr (tr-root tr)
---     where
---         ref-tr-tup-h : (tr₁ : TypeResolver Γ Γᵈ ts) → EmbedIntoTR tr₁ tr → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
---         ref-tr-tup-h []ᵀ      tev = []ᵀ
---         ref-tr-tup-h (e ∷ tr) tev = (ref-h e (e-tup-e (ref-tr-lookup here tev) ev)) ∷ (ref-tr-tup-h tr (tr-el tev))
-
+-- Helper function for refactoring expressions within a sequence of expressions given lookback and positional evidence (origin: tuple)
 ref-tr-tup-h : (tr : TypeResolver Γ Γᵈ ts') → (e' : Γ' , Γᵈ ⊢ t') → EmbedInto (tuple tr) e' → (tr₁ : TypeResolver Γ Γᵈ ts) → EmbedIntoTR tr₁ tr → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
 ref-tr-tup-h tr e' ev []ᵀ       tev = []ᵀ
 ref-tr-tup-h tr e' ev (e ∷ tr₁) tev = (ref-h e (e-tup-e (ref-tr-lookup here tev) ev)) ∷ (ref-tr-tup-h tr e' ev tr₁ (tr-el tev))
 
+-- Function for refactoring expressions within a sequence of expressions given lookback evidence (origin: tuple)
 ref-tr-tup : {e' : Γ' , Γᵈ ⊢ t'} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (tuple tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
 ref-tr-tup {e' = e'} tr ev = ref-tr-tup-h tr e' ev tr (tr-root tr)
 
--- ref-tr-rec : {e' : Γ' , Γᵈ ⊢ t'} {x : recDecl ts ∈ Γᵈ} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (recInst x tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
--- ref-tr-rec {Γᵈ = Γᵈ} {Γ = Γ} {e' = e'} tr ev = ref-tr-rec-h tr (tr-root tr)
---     where
---         ref-tr-rec-h : (tr₁ : TypeResolver Γ Γᵈ ts) → EmbedIntoTR tr₁ tr → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
---         ref-tr-rec-h []ᵀ      tev = []ᵀ
---         ref-tr-rec-h (e ∷ tr) tev = (ref-h e (e-rec-e (ref-tr-lookup here tev) ev)) ∷ (ref-tr-rec-h tr (tr-el tev))
-
+-- Helper function for refactoring expressions within a sequence of expressions given lookback and positional evidence (origin: record instance)
 ref-tr-rec-h : {x : recDecl ts' ∈ Γᵈ} → (tr : TypeResolver Γ Γᵈ ts') → (e' : Γ' , Γᵈ ⊢ t') → EmbedInto (recInst x tr) e' → (tr₁ : TypeResolver Γ Γᵈ ts) → EmbedIntoTR tr₁ tr → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
 ref-tr-rec-h tr e' ev []ᵀ       tev = []ᵀ
 ref-tr-rec-h tr e' ev (e ∷ tr₁) tev = (ref-h e (e-rec-e (ref-tr-lookup here tev) ev)) ∷ (ref-tr-rec-h tr e' ev tr₁ (tr-el tev))
  
+-- Function for refactoring expressions within a sequence of expressions given lookback evidence (origin: record instance)
 ref-tr-rec : {e' : Γ' , Γᵈ ⊢ t'} {x : recDecl ts ∈ Γᵈ} → (tr : TypeResolver Γ Γᵈ ts) → EmbedInto (recInst x tr) e' → TypeResolver (ref-ctx Γ) (ref-d-ctx (ref-tuples-to-decls e' ++ Γᵈ)) (ref-type-list ts)
 ref-tr-rec {e' = e'} tr ev = ref-tr-rec-h tr e' ev tr (tr-root tr)
 
@@ -233,8 +235,7 @@ ref-h                     (rLookup e x)  ev = rLookup (ref-h e (e-rec-l ev)) (re
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
-{- The core refactoring operation that replaces tuples with records for arbitrary expressions. -}
-
+-- Function for refactoring tuples to records
 ref : (e : Γ , Γᵈ ⊢ t) → ref-ctx Γ , ref-d-ctx ((ref-tuples-to-decls e) ++ Γᵈ) ⊢ ref-type t
 ref e = ref-h e (e-root e)
 

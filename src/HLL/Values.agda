@@ -1,4 +1,4 @@
-{- Values for the HLL. -}
+{- Values and environment for the HLL. -}
 module HLL.Values where
 
 open import Agda.Builtin.Char
@@ -20,13 +20,15 @@ private
 
 data Value : Type → Set
 
-data Env : Ctx → Set where
-    []  : Env []
-    _∷_ : (v : Value t) → Env Γ → Env (t ∷ Γ)
-
+-- Arbitrary list of values of a certain type
 data PolyList : List Type → Set where
     []  : PolyList []
     _∷_ : Value t → PolyList ts → PolyList (t ∷ ts)
+
+-- An environment is similar to a PolyList where the type context
+-- Γ is the accumulated type sequence
+Env : Ctx → Set
+Env = PolyList
 
 -- Allowed values within the HLL
 data Value where

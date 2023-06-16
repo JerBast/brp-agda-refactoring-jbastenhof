@@ -26,10 +26,12 @@ infix  4 _,_⊢_
 
 data _,_⊢_ : Ctx → DataCtx → Type → Set
 
+-- Keep track of all types in an arbitrary sequence of terms
 data TypeResolver (Γ : Ctx) (Γᵈ : DataCtx) : List Type → Set where
     []ᵀ : TypeResolver Γ Γᵈ []
     _∷_ : (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ ts → TypeResolver Γ Γᵈ (t ∷ ts) 
 
+-- Provide evidence for a term occurring in a TypeResolver
 data _∈ᵀ_ : (Γ , Γᵈ ⊢ t) → TypeResolver Γ Γᵈ ts → Set where
     here  : {e₁ : Γ , Γᵈ ⊢ t}                   {tr : TypeResolver Γ Γᵈ ts}            → e₁ ∈ᵀ (e₁ ∷ tr)
     there : {e₁ : Γ , Γᵈ ⊢ t} {e₂ : Γ , Γᵈ ⊢ u} {tr : TypeResolver Γ Γᵈ ts} → e₁ ∈ᵀ tr → e₁ ∈ᵀ (e₂ ∷ tr)

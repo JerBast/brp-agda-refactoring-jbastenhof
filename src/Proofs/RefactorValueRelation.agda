@@ -40,8 +40,10 @@ private
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+-- Relation from one value to another
 _⟶ⱽ_ : Value t → Value (ref-type t) → Set
 
+-- Sequence of relations from one value to another
 _⟶ᴾⱽ_ : PolyList ts → PolyList (ref-type-list ts) → Set
 []         ⟶ᴾⱽ []         = ⊤
 (v₁ ∷ vs₁) ⟶ᴾⱽ (v₂ ∷ vs₂) = (v₁ ⟶ⱽ v₂) × (vs₁ ⟶ᴾⱽ vs₂)
@@ -57,22 +59,25 @@ rec vs₁                         ⟶ⱽ rec vs₂                      = vs₁ 
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+-- Relation between all values of an environment pre- and post-refactoring
 _⟶ᴱ_ : Env Γ → Env (ref-ctx Γ) → Set
-[]        ⟶ᴱ []        = ⊤
-(v₁ ∷ γ₁) ⟶ᴱ (v₂ ∷ γ₂) = (v₁ ⟶ⱽ v₂) × (γ₁ ⟶ᴱ γ₂)
+_⟶ᴱ_ = _⟶ᴾⱽ_
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+-- Proof for relating a value within an environment to its counterpart in a refactored environment
 ref-lookup-v : {x : t ∈ Γ} {γ₁ : Env Γ} {γ₂ : Env (ref-ctx Γ)} → (γ₁ ⟶ᴱ γ₂) → value-lookup γ₁ x ⟶ⱽ value-lookup γ₂ (ref-ctx-lookup x)
 ref-lookup-v {x = here}    {γ₁ = v₁ ∷ γ₁} {v₂ ∷ γ₂} r = proj₁ r
 ref-lookup-v {x = there x} {γ₁ = v₁ ∷ γ₁} {v₂ ∷ γ₂} r = ref-lookup-v (proj₂ r)
 
+-- Proof for relating a value in a sequence to its counterpart in a sequence of refactored expressions
 ref-lookup-pl : {x : t ∈ ts} {pl₁ : PolyList ts} {pl₂ : PolyList (ref-type-list ts)} → pl₁ ⟶ᴾⱽ pl₂ → poly-list-lookup pl₁ x ⟶ⱽ poly-list-lookup pl₂ (ref-type-list-lookup x)
 ref-lookup-pl {x = here}    {v₁ ∷ pl₁} {v₂ ∷ pl₂} r = proj₁ r
 ref-lookup-pl {x = there x} {v₁ ∷ pl₁} {v₂ ∷ pl₂} r = ref-lookup-pl (proj₂ r)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+-- Helper function for constructing the value relation based on a pre- and post-refactor expression
 proof-h : {γ₁ : Env Γ} {γ₂ : Env (ref-ctx Γ)} {e : Γ , Γᵈ ⊢ t} {e' : Γ' , Γᵈ ⊢ t'}
     → (ev : EmbedInto e e')
     → γ₁ , Γᵈ                                       ⊢ e          ⇓ v₁
@@ -116,6 +121,7 @@ proof-h ev (⇓rLookup e₁)   (⇓rLookup e₂)   γ                           
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
+-- Function for constructing the value relation based on a pre- and post-refactor expression
 proof : {e : [] , Γᵈ ⊢ t} → [] , Γᵈ ⊢ e ⇓ v₁ → [] , ref-d-ctx (ref-tuples-to-decls e ++ Γᵈ) ⊢ ref e ⇓ v₂ → v₁ ⟶ⱽ v₂
 proof {e = e} e₁ e₂ = proof-h (e-root e) e₁ e₂ tt
 
