@@ -7,6 +7,7 @@ open import Data.List.Base using (_++_)
 
 open import HLL.HLL
 open import HLL.Types
+open import HLL.BinOp
 open import HLL.Context
 open import HLL.DataContext
 
@@ -18,6 +19,8 @@ private
     variable
         t t'   : Type
         ts ts' : List Type
+
+        op : BinOp
 
         d : Decl
 
@@ -98,6 +101,7 @@ ref-tuples-to-decls (char v)       = []
 ref-tuples-to-decls (var x)        = []
 ref-tuples-to-decls (fun b)        = ref-tuples-to-decls b
 ref-tuples-to-decls (f ∙ a)        = (ref-tuples-to-decls f) ++ (ref-tuples-to-decls a)
+ref-tuples-to-decls (bin op l r)   = (ref-tuples-to-decls l) ++ (ref-tuples-to-decls r)
 ref-tuples-to-decls (tuple tr)     = (recDecl (tr-to-type-list tr)) ∷ (ref-tuples-to-decls-tr tr)
 ref-tuples-to-decls (tLookup e x)  = ref-tuples-to-decls e
 ref-tuples-to-decls (recInst x tr) = ref-tuples-to-decls-tr tr
@@ -143,6 +147,16 @@ data EmbedInto : (Γ , Γᵈ ⊢ t) → (Γ₁ , Γᵈ ⊢ t₁) → Set where
         → EmbedInto (e₂ ∙ e₁) e
         -----------------------
         → EmbedInto e₁ e
+
+    e-bin-l : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ numT} {e₂ : Γ₂ , Γᵈ ⊢ numT}
+        → EmbedInto (bin op e₁ e₂) e
+        ----------------------------
+        → EmbedInto e₁ e
+    
+    e-bin-r : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₂ , Γᵈ ⊢ numT} {e₂ : Γ₂ , Γᵈ ⊢ numT}
+        → EmbedInto (bin op e₁ e₂) e
+        ----------------------------
+        → EmbedInto e₂ e
     
     e-tup-e : {e : Γ , Γᵈ ⊢ t} {e₁ : Γ₁ , Γᵈ ⊢ t₁} {tr : TypeResolver Γ₁ Γᵈ ts₁}
         → e₁ ∈ᵀ tr
@@ -190,6 +204,8 @@ ref-t-lookup x (e-root _)             = x
 ref-t-lookup x (e-func ev)            = ref-t-lookup x ev
 ref-t-lookup x (e-app-l {e₁ = e₁} ev) = ref-t-lookup (d-ctx-ext-lookup-r x (ref-tuples-to-decls e₁)) ev
 ref-t-lookup x (e-app-r {e₂ = e₂} ev) = ref-t-lookup (d-ctx-ext-lookup-l x (ref-tuples-to-decls e₂)) ev
+ref-t-lookup x (e-bin-l {e₂ = e₂} ev) = ref-t-lookup (d-ctx-ext-lookup-r x (ref-tuples-to-decls e₂)) ev
+ref-t-lookup x (e-bin-r {e₁ = e₁} ev) = ref-t-lookup (d-ctx-ext-lookup-l x (ref-tuples-to-decls e₁)) ev
 ref-t-lookup x (e-tup-e ψ ev)         = ref-t-lookup (there (d-ctx-ext-lookup-tr ψ x)) ev
 ref-t-lookup x (e-tup-l ev)           = ref-t-lookup x ev
 ref-t-lookup x (e-rec-e ψ ev)         = ref-t-lookup (d-ctx-ext-lookup-tr ψ x) ev
@@ -228,6 +244,7 @@ ref-h                     (char c)       ev = char c
 ref-h                     (var x)        ev = var (ref-ctx-lookup x)
 ref-h                     (fun b)        ev = fun (ref-h b (e-func ev))
 ref-h                     (f ∙ a)        ev = (ref-h f (e-app-l ev)) ∙ (ref-h a (e-app-r ev))
+ref-h                     (bin op l r)   ev = bin op (ref-h l (e-bin-l ev)) (ref-h r (e-bin-r ev))
 ref-h {Γᵈ = Γᵈ} {e' = e'} (tuple tr)     ev = recInst (ref-d-ctx-lookup (d-ctx-ext-lookup-r (ref-t-lookup here ev) Γᵈ)) (ref-tr-tup tr ev)
 ref-h                     (tLookup e x)  ev = rLookup (ref-h e (e-tup-l ev)) (ref-type-list-lookup x)
 ref-h {e' = e'}           (recInst x tr) ev = recInst (ref-d-ctx-ext-lookup x (ref-tuples-to-decls e')) (ref-tr-rec tr ev)

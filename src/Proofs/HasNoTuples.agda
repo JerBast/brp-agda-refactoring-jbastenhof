@@ -37,6 +37,8 @@ data HasNoTuples (Γ : Ctx) (Γᵈ : DataCtx) : Γ , Γᵈ ⊢ t → Set where
         → HasNoTuples Γ Γᵈ (fun b)
     app : {f : Γ , Γᵈ ⊢ t ⇒ u} {a : Γ , Γᵈ ⊢ t}
         → HasNoTuples Γ Γᵈ (f ∙ a)
+    bin : ∀ {op} {e₁ : Γ , Γᵈ ⊢ numT} {e₂ : Γ , Γᵈ ⊢ numT}
+        → HasNoTuples Γ Γᵈ (bin op e₁ e₂)
     rec : {tr : TypeResolver Γ Γᵈ ts} {x : recDecl ts ∈ Γᵈ}
         → HasNoTuples Γ Γᵈ (recInst x tr)
     rlu : {e : Γ , Γᵈ ⊢ recT ts} {x : t ∈ ts}
@@ -50,6 +52,7 @@ proof (char c)       = chr
 proof (var x)        = var
 proof (fun b)        = fun
 proof (f ∙ a)        = app
+proof (bin op l r)   = bin
 proof (tuple tr)     = rec
 proof (tLookup e x)  = rlu
 proof (recInst x tr) = rec

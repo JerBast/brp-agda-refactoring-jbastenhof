@@ -9,6 +9,7 @@ open import Agda.Builtin.List
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
 open import HLL.Types
+open import HLL.BinOp
 open import HLL.Context
 open import HLL.DataContext
 
@@ -57,6 +58,13 @@ data _,_⊢_ where
         → Γ , Γᵈ ⊢ t
         ------------
         → Γ , Γᵈ ⊢ u
+    
+    -- Binary operations
+    bin : BinOp
+        → Γ , Γᵈ ⊢ numT
+        → Γ , Γᵈ ⊢ numT
+        ---------------
+        → Γ , Γᵈ ⊢ numT
 
     -- Tuple
     tuple : TypeResolver Γ Γᵈ ts

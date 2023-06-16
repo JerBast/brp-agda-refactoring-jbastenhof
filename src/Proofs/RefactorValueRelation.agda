@@ -10,6 +10,7 @@ open import Data.List.Base using (_++_)
 
 open import HLL.HLL
 open import HLL.Types
+open import HLL.BinOp
 open import HLL.Values
 open import HLL.Context
 open import HLL.DataContext
@@ -85,6 +86,13 @@ proof-h : {γ₁ : Env Γ} {γ₂ : Env (ref-ctx Γ)} {e : Γ , Γᵈ ⊢ t} {e'
     → γ₁ ⟶ᴱ γ₂
     → v₁ ⟶ⱽ v₂
 
+proof-h-bin-op : ∀ {n₁ n₂ n₃ n₄}
+    → (op : BinOp)
+    → num n₁ ⟶ⱽ num n₃
+    → num n₂ ⟶ⱽ num n₄
+    → num (eval-bin-op op n₁ n₂) ⟶ⱽ num (eval-bin-op op n₃ n₄)
+proof-h-bin-op _ refl refl = refl
+
 proof-h-rr-tup : {γ₁ : Env Γ} {γ₂ : Env (ref-ctx Γ)} {e' : Γ' , Γᵈ ⊢ t'} {tr₁ : TypeResolver Γ Γᵈ ts} {pl₁ : PolyList ts} {pl₂ : PolyList (ref-type-list ts)}
     → (ev : EmbedInto (tuple tr₁) e')
     → ReductionResolver γ₁ Γᵈ tr₁ pl₁
@@ -109,15 +117,16 @@ proof-h-rr-rec {Γ} {Γᵈ = Γᵈ} {e' = e'} {tr₁ = tr₁} ev rr₁ rr₂ γ 
         proof-h-rr-tup-h tev []ᴿ        []ᴿ        γ = tt
         proof-h-rr-tup-h tev (e₁ ∷ rr₁) (e₂ ∷ rr₂) γ = proof-h (e-rec-e (ref-tr-lookup here tev) ev) e₁ e₂ γ , proof-h-rr-tup-h (tr-el tev) rr₁ rr₂ γ
 
-proof-h ev ⇓num            ⇓num            _                             = refl
-proof-h ev ⇓char           ⇓char           _                             = refl
-proof-h ev ⇓var            ⇓var            γ                             = ref-lookup-v γ
-proof-h ev ⇓fun ⇓fun                       γ {vᵀ₁⟶vᵀ₂ = vᵀ₁⟶vᵀ₂} e₁ e₂ = proof-h (e-func ev) e₁ e₂ (vᵀ₁⟶vᵀ₂ , γ)
-proof-h ev (⇓app f₁ b₁ a₁) (⇓app f₂ b₂ a₂) γ                             = (proof-h (e-app-l ev) f₁ f₂ γ) {vᵀ₁⟶vᵀ₂ = proof-h (e-app-r ev) a₁ a₂ γ} b₁ b₂
-proof-h ev (⇓tuple rr₁)    (⇓recInst rr₂)  γ                             = proof-h-rr-tup ev rr₁ rr₂ γ
-proof-h ev (⇓tLookup e₁)   (⇓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-tup-l ev) e₁ e₂ γ)
-proof-h ev (⇓recInst rr₁)  (⇓recInst rr₂)  γ                             = proof-h-rr-rec ev rr₁ rr₂ γ
-proof-h ev (⇓rLookup e₁)   (⇓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-rec-l ev) e₁ e₂ γ)
+proof-h ev ⇓num                   ⇓num            _                             = refl
+proof-h ev ⇓char                  ⇓char           _                             = refl
+proof-h ev ⇓var                   ⇓var            γ                             = ref-lookup-v γ
+proof-h ev ⇓fun                   ⇓fun            γ {vᵀ₁⟶vᵀ₂ = vᵀ₁⟶vᵀ₂} e₁ e₂ = proof-h (e-func ev) e₁ e₂ (vᵀ₁⟶vᵀ₂ , γ)
+proof-h ev (⇓app f₁ b₁ a₁)        (⇓app f₂ b₂ a₂) γ                             = (proof-h (e-app-l ev) f₁ f₂ γ) {vᵀ₁⟶vᵀ₂ = proof-h (e-app-r ev) a₁ a₂ γ} b₁ b₂
+proof-h ev (⇓bin {op = op} l₁ r₁) (⇓bin l₂ r₂)    γ                             = proof-h-bin-op op (proof-h (e-bin-l ev) l₁ l₂ γ) (proof-h (e-bin-r ev) r₁ r₂ γ)
+proof-h ev (⇓tuple rr₁)           (⇓recInst rr₂)  γ                             = proof-h-rr-tup ev rr₁ rr₂ γ
+proof-h ev (⇓tLookup e₁)          (⇓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-tup-l ev) e₁ e₂ γ)
+proof-h ev (⇓recInst rr₁)         (⇓recInst rr₂)  γ                             = proof-h-rr-rec ev rr₁ rr₂ γ
+proof-h ev (⇓rLookup e₁)          (⇓rLookup e₂)   γ                             = ref-lookup-pl (proof-h (e-rec-l ev) e₁ e₂ γ)
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
