@@ -1,16 +1,14 @@
+{- Values for the HLL. -}
 module HLL.Values where
 
 open import Agda.Builtin.Char
+open import Agda.Builtin.List
 open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
-open import Data.List.Base
-
-open import HLL.HLL using (_,_⊢_)
+open import HLL.HLL
 open import HLL.Types
 open import HLL.Context
 open import HLL.DataContext
-
-open import Utils.Element
 
 private
     variable

@@ -1,22 +1,18 @@
 {- Value relationship between the big-step semantics of an expression and its refactored counterpart. -}
 module Proofs.RefactorValueRelation where
 
-open import Agda.Builtin.Char
 open import Agda.Builtin.List
 open import Agda.Builtin.Unit
-open import Agda.Builtin.Nat renaming (Nat to ℕ)
 open import Agda.Builtin.Equality
 
-open import Data.List.Base using (_++_)
 open import Data.Product
-
-open import Relation.Binary.PropositionalEquality.Core
+open import Data.List.Base using (_++_)
 
 open import HLL.HLL
 open import HLL.Types
 open import HLL.Values
-open import HLL.Context using (Ctx)
-open import HLL.DataContext using (DataCtx)
+open import HLL.Context
+open import HLL.DataContext
 open import HLL.DynamicSemantics
 
 open import Refactoring.Refactoring

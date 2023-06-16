@@ -1,6 +1,4 @@
-{-
-    Types and declarations for the HLL.
- -}
+{- Types and declarations for the HLL. -}
 module HLL.Types where
 
 open import Agda.Builtin.List

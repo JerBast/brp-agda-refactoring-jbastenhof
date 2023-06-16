@@ -1,14 +1,13 @@
+{- Big-step semantics for the HLL. -}
 module HLL.DynamicSemantics where
 
-open import Agda.Builtin.Char
 open import Agda.Builtin.List
-open import Agda.Builtin.Nat renaming (Nat to ℕ)
 
 open import HLL.HLL
 open import HLL.Types
 open import HLL.Values
-open import HLL.Context using (Ctx)
-open import HLL.DataContext using (DataCtx)
+open import HLL.Context
+open import HLL.DataContext
 
 open import Utils.Element
 

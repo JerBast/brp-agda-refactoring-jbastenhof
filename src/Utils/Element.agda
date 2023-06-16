@@ -1,6 +1,6 @@
+{- Utility module for stating that some value is an element of a list. -}
 module Utils.Element where
 
-open import Data.Fin.Base
 open import Data.List.Base
 
 private
@@ -12,7 +12,3 @@ private
 data _∈_ : A → List A → Set where
     here  : a ∈ (a ∷ as)
     there : a₁ ∈ as → a₁ ∈ (a₂ ∷ as)
-
-index : a ∈ as → Fin (length as)
-index here      = zero
-index (there x) = suc (index x)

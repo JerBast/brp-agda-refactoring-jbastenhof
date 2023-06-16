@@ -1,9 +1,6 @@
-{-
-    Examples/test programs for the refactoring of the HLL.
- -}
+{- Examples/test programs for the refactoring of the HLL. -}
 module Refactoring.Examples.Refactoring where
 
-open import Agda.Builtin.Nat
 open import Agda.Builtin.List
 open import Agda.Builtin.Equality
 

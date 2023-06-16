@@ -1,13 +1,14 @@
 {- Proof that after refactoring there are no tuples left. -}
 module Proofs.HasNoTuples where
 
-open import Data.Empty using (⊥)
-open import Data.List.Base using (List; []; _∷_; _++_)
+open import Agda.Builtin.List
+
+open import Data.List.Base using (_++_)
 
 open import HLL.HLL
 open import HLL.Types
-open import HLL.Context using (Ctx)
-open import HLL.DataContext using (DataCtx)
+open import HLL.Context
+open import HLL.DataContext
 
 open import Refactoring.Refactoring
 
